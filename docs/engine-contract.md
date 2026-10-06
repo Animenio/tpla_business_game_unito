@@ -1,157 +1,162 @@
-# Simulation Engine Contract — Draft v0.1
+# Simulation Engine Contract — v0.2
 
-Status: structural contract only.
+Source model: Aurora Tyres World Model v0.4.
 
-The exact decision keys, formulas, state variables, shocks, constraints and scoring functions must be derived from Aurora Tyres World Model v0.4 before implementation.
+## Status
 
-## Design goals
+The workbook has now been mapped at the contract level.
 
-The engine must be:
+Frozen from the workbook:
 
-- deterministic
-- pure where possible
-- server-side
-- versioned
-- testable independently from the UI/database
-- reproducible from persisted inputs
+- 9 decision keys, bounds, steps and units
+- three round/scenario definitions
+- 2025 baseline
+- calibrated model parameters
+- endogenous state/output vector
+- Balanced reference decisions
+- Balanced engine/financial golden outputs
+- validation benchmarks
 
-## Proposed TypeScript contract
+Not yet frozen:
+
+- original Excel formula expressions for the numerical engine
+
+The current file interface exposes the workbook's values but not the formula strings themselves. Numerical formulas must therefore remain unimplemented until the source expressions can be read/exported. We will not reverse-engineer the formulas from outputs and label them v0.4.
+
+## TypeScript domain contract
+
+Canonical definitions now live in:
+
+- `src/domain/simulation/v04/spec.ts`
+- `src/domain/simulation/v04/reference-balanced.ts`
+- `src/domain/simulation/v04/validation.ts`
+
+### Decision contract
 
 ```ts
-export type ModelVersion = "aurora-tyres-v0.4";
-
-export type SimulationYear = 2026 | 2027 | 2028 | 2029 | 2030;
-export type RoundNumber = 1 | 2 | 3;
-
-export interface SimulationContext {
-  modelVersion: ModelVersion;
-  sessionId: string;
-  teamId: string;
-  round: RoundNumber;
-}
-
-export interface CompanyState {
-  year: SimulationYear;
-
-  // To be replaced by the exact v0.4 state vector.
-  financial: Record<string, number>;
-  operating: Record<string, number>;
-  strategic: Record<string, number>;
-}
-
 export interface DecisionSet {
-  round: RoundNumber;
-
-  // Temporary generic representation.
-  // Freeze to explicit fields after mapping v0.4.
-  values: Record<string, number | string | boolean>;
-
-  rationale?: string;
+  hv_price_change: number;
+  std_price_change: number;
+  marketing_change: number;
+  rnd_pct: number;
+  capex_pct: number;
+  inventory_days: number;
+  receivable_days: number;
+  natural_rubber_hedge: number;
+  connected_rnd_allocation: number;
 }
+```
 
-export interface ExternalScenario {
-  round: RoundNumber;
-  parameters: Record<string, number | string | boolean>;
-}
+The API/database should use these keys unchanged to preserve direct traceability to sheet `12_WEB_APP_SCHEMA`.
 
-export interface YearResult {
-  year: SimulationYear;
-  openingState: CompanyState;
-  decisions: DecisionSet;
-  scenario: ExternalScenario;
-  closingState: CompanyState;
-  metrics: Record<string, number>;
-}
+## Required engine outputs
 
-export interface RoundResult {
-  round: RoundNumber;
-  years: YearResult[];
-  finalState: CompanyState;
-}
+The authoritative engine must return both operating/strategic and financial state.
 
-export interface FinalScore {
-  total: number;
-  components: Record<string, number>;
-}
-
-export interface SimulationEngine {
-  readonly modelVersion: ModelVersion;
-
-  validateDecisions(
-    state: CompanyState,
-    decisions: DecisionSet,
-    scenario: ExternalScenario
-  ): ValidationResult;
-
-  runRound(
-    state: CompanyState,
-    decisions: DecisionSet,
-    scenario: ExternalScenario
-  ): RoundResult;
-
-  calculateFinalScore(history: RoundResult[]): FinalScore;
-}
-
-export interface ValidationResult {
-  valid: boolean;
-  errors: Array<{
-    key: string;
-    code: string;
-    message: string;
-  }>;
+```ts
+export interface SimulationResult {
+  round: 1 | 2 | 3;
+  modelVersion: "aurora-tyres-v0.4";
+  operating: {
+    premiumPriceIndex: number;
+    standardPriceIndex: number;
+    innovationStock: number;
+    brandStrength: number;
+    digitalReadiness: number;
+    assetHealth: number;
+    oemQualificationScore: number;
+    serviceFulfilmentFactor: number;
+    competitivePosition: number;
+    strategicHealth: number;
+  };
+  commercial: {
+    premiumRevenue: number;
+    standardRevenue: number;
+    revenue: number;
+    premiumShare: number;
+  };
+  profitability: {
+    adjustedEbitda: number;
+    adjustedEbitdaMargin: number;
+    adjustedEbit: number;
+    adjustedEbitMargin: number;
+  };
+  cash: {
+    tradeReceivables: number;
+    inventories: number;
+    tradePayables: number;
+    netWorkingCapital: number;
+    changeInNwc: number;
+    capex: number;
+    ufcf: number;
+    netDebt: number;
+    netDebtToEbitda: number;
+  };
 }
 ```
 
 ## Determinism
-
-A simulation result must depend only on:
 
 ```
 model version
 + opening state
 + submitted decisions
 + scenario parameters
-= result
+= authoritative result
 ```
 
 No LLM may participate in the numerical calculation path.
 
-AI can support student reasoning, but it cannot alter the authoritative engine output.
-
 ## Execution policy
 
-1. load locked decision submission
-2. load opening state
-3. load round scenario
-4. validate
-5. execute engine
-6. persist full result in one transaction
-7. compute input hash
-8. prevent duplicate calculation for same input hash/model version
-9. publish results only when teacher releases them
+1. load a locked decision submission
+2. validate against the v0.4 decision schema
+3. load opening state
+4. load the frozen round scenario
+5. execute the model
+6. persist inputs and full outputs atomically
+7. persist the model version
+8. calculate an input hash
+9. reject duplicate calculation for the same model/input hash
+10. release results only through the teacher session state machine
 
-## Testing requirement
+## Numerical parity requirement
 
-For every Excel/World Model reference scenario, create a golden test:
+The first acceptance target is the Balanced reference scenario.
 
-```ts
-expect(runRound(referenceInput)).toEqual(referenceOutput)
+The implementation is accepted only when:
+
+```
+engine(BALANCED_DECISIONS, v0.4 scenarios)
+≈ BALANCED_ENGINE_REFERENCE
+≈ BALANCED_FINANCIAL_REFERENCE
 ```
 
-The migration from Excel to TypeScript is accepted only when reference outputs match within explicitly defined numerical tolerances.
+Tolerance policy must be explicit. Recommended initial tolerance:
 
-## World Model mapping checklist
+- exact equality for integer-like controls and categorical states
+- absolute tolerance `1e-9` for indices/ratios
+- absolute tolerance `1e-6` €m for monetary results
 
-When v0.4 is available:
+Tolerance is for floating-point representation only, not model divergence.
 
-1. inventory every input cell / decision variable
-2. inventory every endogenous state variable
-3. identify yearly dependencies
-4. identify round-level shocks
-5. map constraints and bounds
-6. map rounding rules
-7. map scoring functions
-8. define units
-9. define null/blank semantics
-10. create golden input/output fixtures
-11. replace generic Record types with explicit TypeScript interfaces
+## Regression validation
+
+Once formula translation is complete, the test suite must also cover:
+
+- seven strategy archetypes
+- sensitivity extremes
+- random-strategy envelope
+- invalid decision bounds
+- invalid step increments
+- two-year phase handling
+- DCF phase weighting
+- terminal-value calculation
+- risk-penalty activation
+- idempotent re-execution
+
+## Formula translation gate
+
+Do not merge `simulateRound()` under model identifier `aurora-tyres-v0.4` until original workbook formulas are available.
+
+All currently committed TypeScript is contract/specification code, not a substitute numerical implementation.
