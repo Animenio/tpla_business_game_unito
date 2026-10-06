@@ -21,15 +21,26 @@ src/domain/simulation/v04/
 
 La traduzione Excel → TypeScript mantiene formule, dipendenze, DCF e scoring del workbook di riferimento.
 
-### Prima verticale applicativa
+### Verticali applicative implementate
 
-Implementata:
+Studente:
 
 ```
 registrazione / login
 → associazione alla sessione
 → creazione o ingresso nel team
 → lobby realtime
+```
+
+Docente:
+
+```
+login staff
+→ dashboard sessione
+→ monitoraggio studenti e team
+→ conferma gruppi
+→ blocco / riapertura registrazioni
+→ avvio simulazione
 ```
 
 Le schermate seguono il Figma **CFO AI Business Game — UI Design**.
@@ -84,6 +95,9 @@ npm run dev
 - Creazione/ingresso/uscita dai team avvengono tramite RPC `SECURITY DEFINER`.
 - Un utente non può appartenere a più team nella stessa sessione.
 - La lobby usa Supabase Realtime per membership e stato sessione.
+- Il pannello docente usa RPC autorizzate e registra le transizioni in `session_events`.
+- Gli account staff non possono creare o unirsi ai team studenti.
+- L'avvio della simulazione richiede tutti i team confermati e nessuno studente senza team.
 - Il motore economico non viene eseguito nel browser.
 
 ## Decisioni aperte
@@ -102,3 +116,4 @@ Il lavoro è organizzato in PR impilate:
 1. technical foundation
 2. World Model v0.4
 3. application foundation / auth + team + lobby
+4. teacher control panel / team confirmation + session start

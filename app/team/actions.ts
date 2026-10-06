@@ -15,13 +15,22 @@ function translateRpcError(message: string) {
   if (message.includes("USER_ALREADY_IN_TEAM_FOR_SESSION")) {
     return "Sei già associato a un team per questa sessione.";
   }
+  if (message.includes("TEAM_NOT_FOUND_OR_LOCKED")) {
+    return "Codice team non valido oppure team già confermato dal docente.";
+  }
   if (message.includes("TEAM_NOT_FOUND")) {
     return "Codice team non valido.";
   }
-  if (message.includes("TEAM_OUTSIDE_SESSION")) {
+  if (
+    message.includes("TEAM_OUTSIDE_SESSION") ||
+    message.includes("TEAM_OUTSIDE_STUDENT_SESSION")
+  ) {
     return "Il team appartiene a una sessione diversa.";
   }
-  if (message.includes("NO_OPEN_SESSION")) {
+  if (
+    message.includes("NO_OPEN_SESSION") ||
+    message.includes("NO_OPEN_STUDENT_SESSION")
+  ) {
     return "La sessione non accetta nuove registrazioni.";
   }
   if (message.includes("INVALID_TEAM_NAME")) {

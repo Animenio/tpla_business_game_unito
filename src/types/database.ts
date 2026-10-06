@@ -22,6 +22,8 @@ export type Database = {
           created_by: string | null
           id: string
           model_version: string
+          registration_locked_at: string | null
+          started_at: string | null
           status: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at: string
@@ -33,6 +35,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           model_version?: string
+          registration_locked_at?: string | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at?: string
@@ -44,6 +48,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           model_version?: string
+          registration_locked_at?: string | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title?: string
           updated_at?: string
@@ -81,6 +87,58 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
         }
         Relationships: []
+      }
+      session_events: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          event_type: string
+          id: number
+          payload: Json
+          session_id: string
+          team_id: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: never
+          payload?: Json
+          session_id: string
+          team_id?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: never
+          payload?: Json
+          session_id?: string
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       session_members: {
         Row: {
@@ -211,6 +269,29 @@ export type Database = {
       join_team: { Args: { p_code: string }; Returns: string }
       leave_team: { Args: { p_team_id: string }; Returns: undefined }
       session_team_count: { Args: { p_session_id: string }; Returns: number }
+      teacher_session_counts: {
+        Args: { p_session_id: string }
+        Returns: {
+          confirmed_team_count: number
+          registered_students: number
+          team_count: number
+          unassigned_students: number
+        }[]
+      }
+      teacher_set_session_status: {
+        Args: {
+          p_session_id: string
+          p_status: Database["public"]["Enums"]["session_status"]
+        }
+        Returns: Database["public"]["Enums"]["session_status"]
+      }
+      teacher_set_team_status: {
+        Args: {
+          p_status: Database["public"]["Enums"]["team_status"]
+          p_team_id: string
+        }
+        Returns: Database["public"]["Enums"]["team_status"]
+      }
       validate_session_code: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {

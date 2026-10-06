@@ -130,6 +130,8 @@ export default async function LobbyPage({
   const params = await searchParams;
   const error = param(params.error);
   const waiting = session.status !== "live" && session.status !== "completed";
+  const membershipEditable =
+    session.status === "registration_open" && team.status === "forming";
 
   return (
     <main className="application-page">
@@ -195,12 +197,20 @@ export default async function LobbyPage({
               ))}
             </div>
 
-            <form action={leaveTeamAction}>
-              <input name="team_id" type="hidden" value={team.id} />
-              <button className="button-secondary leave-button" type="submit">
-                Esci dal team
-              </button>
-            </form>
+            {membershipEditable ? (
+              <form action={leaveTeamAction}>
+                <input name="team_id" type="hidden" value={team.id} />
+                <button className="button-secondary leave-button" type="submit">
+                  Esci dal team
+                </button>
+              </form>
+            ) : (
+              <div className="team-locked-note">
+                {team.status === "forming"
+                  ? "La composizione del team è bloccata dal docente."
+                  : "Team confermato: la composizione non è più modificabile."}
+              </div>
+            )}
           </section>
 
           <aside className="session-card">
