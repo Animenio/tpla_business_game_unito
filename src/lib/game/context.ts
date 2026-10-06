@@ -42,7 +42,7 @@ export async function requireStudentGameContext() {
       .single(),
   ]);
 
-  if (!session) {
+  if (!session || !profile) {
     redirect("/team");
   }
 
@@ -109,7 +109,7 @@ export async function requireTeacherGameContext() {
       .single(),
   ]);
 
-  if (!session) {
+  if (!session || !profile) {
     redirect("/team");
   }
 
