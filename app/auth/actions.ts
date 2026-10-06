@@ -96,7 +96,7 @@ export async function loginAction(formData: FormData) {
   const password = value(formData, "password");
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -108,6 +108,20 @@ export async function loginAction(formData: FormData) {
         "Credenziali non valide. Controlla email e password.",
       ),
     );
+  }
+
+  if (data.user) {
+    const { data: staffMembership } = await supabase
+      .from("session_members")
+      .select("session_id")
+      .eq("user_id", data.user.id)
+      .in("role", ["teacher", "admin"])
+      .limit(1)
+      .maybeSingle();
+
+    if (staffMembership) {
+      redirect("/teacher");
+    }
   }
 
   redirect("/team");
