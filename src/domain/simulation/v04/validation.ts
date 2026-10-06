@@ -14,6 +14,17 @@ export interface DecisionValidationResult {
   errors: DecisionValidationError[];
 }
 
+export interface DecisionValidationOptions {
+  /**
+   * Enforce the UI step grid from 12_WEB_APP_SCHEMA.
+   *
+   * Default is false because the authoritative workbook's Round-1 Balanced
+   * reference uses rnd_pct = 0.046, which is inside bounds but is not aligned
+   * to the declared 0.005 step from a 0.02 minimum.
+   */
+  enforceStep?: boolean;
+}
+
 const EPSILON = 1e-9;
 
 function isOnStep(value: number, min: number, step: number): boolean {
@@ -23,8 +34,10 @@ function isOnStep(value: number, min: number, step: number): boolean {
 
 export function validateDecisionSet(
   decisions: DecisionSet,
+  options: DecisionValidationOptions = {},
 ): DecisionValidationResult {
   const errors: DecisionValidationError[] = [];
+  const enforceStep = options.enforceStep ?? false;
 
   for (const key of Object.keys(DECISION_DEFINITIONS) as Array<
     keyof DecisionSet
@@ -50,7 +63,10 @@ export function validateDecisionSet(
       continue;
     }
 
-    if (!isOnStep(value, definition.min, definition.step)) {
+    if (
+      enforceStep &&
+      !isOnStep(value, definition.min, definition.step)
+    ) {
       errors.push({
         key,
         code: "INVALID_STEP",
@@ -63,4 +79,10 @@ export function validateDecisionSet(
     valid: errors.length === 0,
     errors,
   };
+}
+
+export function validateStudentDecisionSet(
+  decisions: DecisionSet,
+): DecisionValidationResult {
+  return validateDecisionSet(decisions, { enforceStep: true });
 }
