@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { TeacherRealtime } from "@/src/components/teacher-realtime";
+import { TeacherRoundControls } from "@/src/components/teacher-round-controls";
 import { createClient } from "@/src/lib/supabase/server";
 import {
   setSessionStatusAction,
@@ -175,6 +176,12 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     metrics.confirmed_team_count === metrics.team_count &&
     metrics.unassigned_students === 0;
 
+  const { data: rounds } = await supabase
+    .from("game_rounds")
+    .select("id, round_number, period_label, scenario_title, status")
+    .eq("session_id", session.id)
+    .order("round_number", { ascending: true });
+
   const params = await searchParams;
   const error = param(params.error);
   const editable =
@@ -295,6 +302,17 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
             gruppo.
           </div>
         ) : null}
+
+        <TeacherRoundControls
+          rounds={(rounds ?? []).map((round) => ({
+            id: round.id,
+            round_number: round.round_number,
+            period_label: round.period_label,
+            scenario_title: round.scenario_title,
+            status: round.status,
+          }))}
+          sessionStatus={session.status}
+        />
 
         <section className="teacher-section">
           <div className="teacher-section-heading">
