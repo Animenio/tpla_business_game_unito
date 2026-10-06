@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_rounds: {
+        Row: {
+          closed_at: string | null
+          closes_at: string | null
+          created_at: string
+          decision_window_minutes: number
+          id: string
+          opens_at: string | null
+          period_label: string
+          round_number: number
+          scenario_summary: string
+          scenario_title: string
+          session_id: string
+          status: Database["public"]["Enums"]["round_status"]
+        }
+        Insert: {
+          closed_at?: string | null
+          closes_at?: string | null
+          created_at?: string
+          decision_window_minutes?: number
+          id?: string
+          opens_at?: string | null
+          period_label: string
+          round_number: number
+          scenario_summary: string
+          scenario_title: string
+          session_id: string
+          status?: Database["public"]["Enums"]["round_status"]
+        }
+        Update: {
+          closed_at?: string | null
+          closes_at?: string | null
+          created_at?: string
+          decision_window_minutes?: number
+          id?: string
+          opens_at?: string | null
+          period_label?: string
+          round_number?: number
+          scenario_summary?: string
+          scenario_title?: string
+          session_id?: string
+          status?: Database["public"]["Enums"]["round_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_rounds_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_sessions: {
         Row: {
           academic_year: string | null
@@ -140,6 +193,50 @@ export type Database = {
           },
         ]
       }
+      session_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_type: string
+          id: string
+          required: boolean
+          session_id: string
+          sort_order: number
+          source_url: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_type: string
+          id?: string
+          required?: boolean
+          session_id: string
+          sort_order: number
+          source_url?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_type?: string
+          id?: string
+          required?: boolean
+          session_id?: string
+          sort_order?: number
+          source_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_materials_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_members: {
         Row: {
           joined_at: string
@@ -209,6 +306,151 @@ export type Database = {
           },
         ]
       }
+      team_round_decisions: {
+        Row: {
+          capex_pct: number
+          connected_rnd_allocation: number
+          created_at: string
+          hv_price_change: number
+          id: string
+          inventory_days: number
+          marketing_change: number
+          natural_rubber_hedge: number
+          objective: Database["public"]["Enums"]["round_objective"]
+          receivable_days: number
+          rnd_pct: number
+          round_id: string
+          status: Database["public"]["Enums"]["decision_status"]
+          std_price_change: number
+          submitted_at: string | null
+          submitted_by: string | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          capex_pct: number
+          connected_rnd_allocation: number
+          created_at?: string
+          hv_price_change: number
+          id?: string
+          inventory_days: number
+          marketing_change: number
+          natural_rubber_hedge: number
+          objective: Database["public"]["Enums"]["round_objective"]
+          receivable_days: number
+          rnd_pct: number
+          round_id: string
+          status?: Database["public"]["Enums"]["decision_status"]
+          std_price_change: number
+          submitted_at?: string | null
+          submitted_by?: string | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          capex_pct?: number
+          connected_rnd_allocation?: number
+          created_at?: string
+          hv_price_change?: number
+          id?: string
+          inventory_days?: number
+          marketing_change?: number
+          natural_rubber_hedge?: number
+          objective?: Database["public"]["Enums"]["round_objective"]
+          receivable_days?: number
+          rnd_pct?: number
+          round_id?: string
+          status?: Database["public"]["Enums"]["decision_status"]
+          std_price_change?: number
+          submitted_at?: string | null
+          submitted_by?: string | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_round_decisions_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "game_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_round_decisions_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_round_decisions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_round_results: {
+        Row: {
+          adjusted_ebitda_margin: number
+          calculated_at: string
+          id: string
+          model_version: string
+          net_debt: number
+          premium_revenue_share: number
+          result: Json
+          round_id: string
+          strategic_health: number
+          team_id: string
+          total_revenue: number
+          unlevered_free_cash_flow: number
+        }
+        Insert: {
+          adjusted_ebitda_margin: number
+          calculated_at?: string
+          id?: string
+          model_version: string
+          net_debt: number
+          premium_revenue_share: number
+          result: Json
+          round_id: string
+          strategic_health: number
+          team_id: string
+          total_revenue: number
+          unlevered_free_cash_flow: number
+        }
+        Update: {
+          adjusted_ebitda_margin?: number
+          calculated_at?: string
+          id?: string
+          model_version?: string
+          net_debt?: number
+          premium_revenue_share?: number
+          result?: Json
+          round_id?: string
+          strategic_health?: number
+          team_id?: string
+          total_revenue?: number
+          unlevered_free_cash_flow?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_round_results_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "game_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_round_results_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           created_at: string
@@ -269,6 +511,22 @@ export type Database = {
       join_team: { Args: { p_code: string }; Returns: string }
       leave_team: { Args: { p_team_id: string }; Returns: undefined }
       session_team_count: { Args: { p_session_id: string }; Returns: number }
+      submit_team_round_decision: {
+        Args: { p_round_id: string }
+        Returns: Database["public"]["Enums"]["decision_status"]
+      }
+      teacher_extend_round: {
+        Args: { p_minutes?: number; p_round_id: string }
+        Returns: string
+      }
+      teacher_finalize_round: {
+        Args: { p_results: Json; p_round_id: string }
+        Returns: Database["public"]["Enums"]["round_status"]
+      }
+      teacher_open_round: {
+        Args: { p_round_id: string; p_window_minutes?: number }
+        Returns: Database["public"]["Enums"]["round_status"]
+      }
       teacher_session_counts: {
         Args: { p_session_id: string }
         Returns: {
@@ -296,6 +554,14 @@ export type Database = {
     }
     Enums: {
       app_role: "student" | "teacher" | "admin"
+      decision_status: "draft" | "submitted"
+      round_objective:
+        | "crescita"
+        | "margine"
+        | "cassa"
+        | "resilienza"
+        | "innovazione"
+      round_status: "scheduled" | "open" | "closed"
       session_status:
         | "draft"
         | "registration_open"
@@ -432,6 +698,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["student", "teacher", "admin"],
+      decision_status: ["draft", "submitted"],
+      round_objective: [
+        "crescita",
+        "margine",
+        "cassa",
+        "resilienza",
+        "innovazione",
+      ],
+      round_status: ["scheduled", "open", "closed"],
       session_status: [
         "draft",
         "registration_open",
