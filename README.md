@@ -44,13 +44,13 @@ npm install
 
 ### 2. Supabase
 
-Crea un progetto Supabase dedicato e applica:
+Il progetto Supabase dedicato è `cfo-ai-business-game-unito`. Le migration versionate sono:
 
 ```
 supabase/migrations/202610060001_app_foundation.sql
 ```
 
-Per sviluppo locale puoi poi eseguire:
+Per sviluppo locale puoi eseguire:
 
 ```
 supabase/seed.sql
@@ -68,7 +68,7 @@ Copia `.env.example` in `.env.local` e valorizza:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 ```
 
 ### 4. Avvio
