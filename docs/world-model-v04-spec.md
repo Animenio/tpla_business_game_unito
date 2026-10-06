@@ -2,7 +2,7 @@
 
 Source of truth: `CFO_AI_Business_Game_World_Model_v04_Aurora_Tyres.xlsx`.
 
-This document freezes every model element that is explicitly exposed by the workbook parser before formula translation begins. No formula below is invented: where the workbook exposes only calculated values and not the original Excel expression, implementation remains intentionally pending.
+This document freezes the model specification and the implementation mapping from the original workbook. The uploaded `.xlsx` has been inspected with formulas intact, and the numerical engine is translated cell-by-cell into TypeScript.
 
 ## 1. Game horizon
 
@@ -324,15 +324,23 @@ A 5,000-strategy random stress test produced:
 
 These numbers are regression targets, not values to optimise directly in application code.
 
-## 9. Formula translation gate
+## 9. Formula translation status
 
-The workbook content currently exposed to this implementation context provides calculated values and parameter definitions, but not the original Excel formula strings.
+The original Excel formulas are now available and have been translated into `src/domain/simulation/v04/engine.ts`.
 
-Therefore:
+Traceability is documented in `docs/excel-typescript-parity.md`.
 
-- constants, schemas, bounds, baseline, scenarios and golden outputs are frozen now;
-- numerical engine formulas are **not** to be reverse-engineered from output values;
-- formula modules remain pending until original formula expressions can be read/exported;
-- no guessed formula may be merged under the v0.4 model identifier.
+The TypeScript engine preserves the workbook's exact:
 
-This preserves one-to-one traceability between the authoritative workbook and the server-side engine.
+- phase-duration logic;
+- MAX/MIN clamps;
+- prior-state dependencies;
+- cost and demand formulas;
+- D&A schedule;
+- working-capital mechanics;
+- debt roll-forward;
+- DCF weights;
+- terminal-value formula;
+- risk-penalty formula.
+
+Any future change to these formulas requires a new model version and refreshed golden fixtures.
