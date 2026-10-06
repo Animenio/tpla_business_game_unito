@@ -64,6 +64,28 @@ export function GameRealtime({
           },
           () => router.refresh(),
         );
+    } else if (roundId) {
+      channel = channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "team_round_decisions",
+            filter: `round_id=eq.${roundId}`,
+          },
+          () => router.refresh(),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "team_round_results",
+            filter: `round_id=eq.${roundId}`,
+          },
+          () => router.refresh(),
+        );
     }
 
     channel.subscribe();
