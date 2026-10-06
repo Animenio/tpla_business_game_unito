@@ -101,6 +101,10 @@ export default async function LobbyPage({
     redirect("/team");
   }
 
+  if (session.status === "live") {
+    redirect("/case-study");
+  }
+
   const { data: memberRows } = await supabase
     .from("team_members")
     .select("user_id, joined_at")
