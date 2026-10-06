@@ -35,7 +35,7 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
   const { data: gameRound } = await supabase
     .from("game_rounds")
     .select(
-      "id, round_number, period_label, scenario_title, scenario_summary, status, opens_at, closes_at",
+      "id, round_number, period_label, scenario_title, scenario_summary, status, decision_window_minutes, opens_at, closes_at",
     )
     .eq("session_id", session.id)
     .eq("round_number", round)
