@@ -37,7 +37,7 @@ export default async function TeamPage({
 
   const { data: sessionMembership } = await supabase
     .from("session_members")
-    .select("session_id, joined_at")
+    .select("session_id, role, joined_at")
     .eq("user_id", user.id)
     .order("joined_at", { ascending: false })
     .limit(1)
@@ -50,6 +50,10 @@ export default async function TeamPage({
           "Il tuo account non è associato a una sessione aperta.",
         ),
     );
+  }
+
+  if (sessionMembership.role === "teacher" || sessionMembership.role === "admin") {
+    redirect("/teacher");
   }
 
   const { data: session } = await supabase
