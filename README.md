@@ -30,6 +30,13 @@ registrazione / login
 → associazione alla sessione
 → creazione o ingresso nel team
 → lobby realtime
+→ Data Room
+→ briefing del round
+→ 9 decisioni
+→ review
+→ invio immutabile
+→ attesa chiusura
+→ risultati del round
 ```
 
 Docente:
@@ -41,6 +48,10 @@ login staff
 → conferma gruppi
 → blocco / riapertura registrazioni
 → avvio simulazione
+→ apertura round
+→ monitoraggio invii live
+→ estensione timer
+→ chiusura e calcolo server-side
 ```
 
 Le schermate seguono il Figma **CFO AI Business Game — UI Design**.
@@ -98,6 +109,10 @@ npm run dev
 - Il pannello docente usa RPC autorizzate e registra le transizioni in `session_events`.
 - Gli account staff non possono creare o unirsi ai team studenti.
 - L'avvio della simulazione richiede tutti i team confermati e nessuno studente senza team.
+- Le decisioni sono modificabili soltanto dal proprio team durante la finestra aperta.
+- Dopo l'invio le decisioni diventano immutabili.
+- La chiusura del round e il salvataggio dei risultati sono atomici lato database.
+- Il motore Aurora Tyres viene eseguito server-side e i risultati persistono insieme alla versione del modello.
 - Il motore economico non viene eseguito nel browser.
 
 ## Decisioni aperte
@@ -117,3 +132,28 @@ Il lavoro è organizzato in PR impilate:
 2. World Model v0.4
 3. application foundation / auth + team + lobby
 4. teacher control panel / team confirmation + session start
+5. round lifecycle / Data Room + decisions + results
+
+
+## Data Room
+
+La struttura della Data Room è già attiva tramite `session_materials`.
+
+I due materiali previsti dal Figma sono:
+
+- Bilancio consolidato semplificato — XLSX
+- Nota integrativa 2025 — Aurora Tyres — PDF
+
+I relativi `source_url` restano intenzionalmente vuoti finché i file Drive definitivi non vengono pubblicati/condivisi per gli studenti. L'app mostra nel frattempo uno stato non cliccabile invece di esporre link privati.
+
+## Round lifecycle
+
+Ogni sessione contiene tre record in `game_rounds`:
+
+- Round 1 — 2026
+- Round 2 — 2027–2028
+- Round 3 — 2029–2030
+
+Il docente apre un round con una finestra temporale; gli studenti salvano una bozza validata sulle regole UI del World Model e la inviano tramite RPC. La chiusura del docente calcola Aurora Tyres v0.4 server-side e salva per ogni team sia il payload completo sia i KPI principali.
+
+La chiusura anticipata è consentita solo quando tutti i team attivi hanno inviato. Dopo la scadenza il docente può chiudere il round anche se alcuni team non hanno inviato; per quei team non viene generato un risultato.
