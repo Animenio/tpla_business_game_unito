@@ -101,6 +101,10 @@ export default async function LobbyPage({
     redirect("/team");
   }
 
+  if (session.status === "live") {
+    redirect("/case-study");
+  }
+
   const { data: memberRows } = await supabase
     .from("team_members")
     .select("user_id, joined_at")
@@ -129,7 +133,7 @@ export default async function LobbyPage({
 
   const params = await searchParams;
   const error = param(params.error);
-  const waiting = session.status !== "live" && session.status !== "completed";
+  const waiting = session.status !== "completed";
   const membershipEditable =
     session.status === "registration_open" && team.status === "forming";
 
@@ -228,7 +232,7 @@ export default async function LobbyPage({
               </div>
               <div>
                 <dt>Anno</dt>
-                <dd>{session.status === "live" ? "In corso" : "Non iniziato"}</dd>
+                <dd>{session.status === "completed" ? "Conclusa" : "Non iniziato"}</dd>
               </div>
               <div>
                 <dt>Timer</dt>
@@ -239,15 +243,15 @@ export default async function LobbyPage({
             <div className="data-room-box">
               <strong>DATA ROOM</strong>
               <p>
-                {session.status === "live"
-                  ? "La sessione è stata avviata dal docente."
+                {session.status === "completed"
+                  ? "La simulazione è conclusa."
                   : "Sarà sbloccata quando il docente avvierà la simulazione."}
               </p>
             </div>
 
             <div className="wait-box">
-              {session.status === "live"
-                ? "Simulazione avviata"
+              {session.status === "completed"
+                ? "Simulazione conclusa"
                 : "Attendi l’avvio della simulazione"}
             </div>
           </aside>
