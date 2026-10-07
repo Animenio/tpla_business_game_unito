@@ -1,4 +1,4 @@
-export const MODEL_VERSION = "aurora-tyres-v0.5.3-candidate.1" as const;
+export const MODEL_VERSION = "aurora-tyres-v0.5.3-candidate.2" as const;
 
 export type ModelVersion = typeof MODEL_VERSION;
 export type RoundNumber = 1 | 2 | 3;
@@ -290,10 +290,10 @@ export const MODEL_PARAMETERS = {
   fixed_opex_capacity_share: 0.60,
   inventory_carrying_cost: 0.03,
   distress_cost_per_leverage_point: 0.02,
-  leverage_threshold: 2.0,
+  leverage_threshold: 1.5,
   leverage_penalty_cap: 5.0,
   premium_price_elasticity: 2.3638,
-  standard_price_elasticity: 3.9,
+  standard_price_elasticity: 4.4,
   elasticity_multiplier_min: 0.8,
   elasticity_multiplier_max: 1.2,
   pricing_power_brand: 0.3,
@@ -372,7 +372,7 @@ export const MODEL_PARAMETERS = {
   terminal_asset_health_excess_persistence: 0.94,
   oem_upper_threshold: 1.08,
   oem_lower_threshold: 0.92,
-  standard_contractual_share: 0.35,
+  standard_contractual_share: 0.25,
 } as const;
 
 export const MODEL_DESIGN = {
