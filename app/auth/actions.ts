@@ -51,16 +51,19 @@ export async function registerAction(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { data: validSession, error: sessionError } = await supabase.rpc(
-    "validate_session_code",
-    { p_code: sessionCode },
+  const { data: validAccess, error: sessionError } = await supabase.rpc(
+    "validate_registration_access",
+    {
+      p_email: email,
+      p_code: sessionCode,
+    },
   );
 
-  if (sessionError || !validSession) {
+  if (sessionError || !validAccess) {
     redirect(
       withError(
         "/?mode=register",
-        "Codice sessione non valido o registrazioni non aperte.",
+        "Codice sessione non valido, registrazioni non aperte o accesso staff non autorizzato.",
       ),
     );
   }
@@ -86,6 +89,20 @@ export async function registerAction(formData: FormData) {
 
   if (!data.session) {
     redirect("/check-email");
+  }
+
+  if (data.user) {
+    const { data: staffMembership } = await supabase
+      .from("session_members")
+      .select("session_id")
+      .eq("user_id", data.user.id)
+      .in("role", ["teacher", "admin"])
+      .limit(1)
+      .maybeSingle();
+
+    if (staffMembership) {
+      redirect("/teacher");
+    }
   }
 
   redirect("/team");
