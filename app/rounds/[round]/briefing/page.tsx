@@ -5,6 +5,7 @@ import { GameRealtime } from "@/src/components/game-realtime";
 import { RoundTimer } from "@/src/components/round-timer";
 import {
   BASELINE_DISPLAY,
+  COMPETITOR_SCALE_REFERENCE,
   ROUND_CONTENT,
   roundNumber,
 } from "@/src/domain/game/round-content";
@@ -126,7 +127,7 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
                 </strong>
               </div>
               <div>
-                <span>Premium</span>
+                <span>Mix ricavi Premium</span>
                 <strong>
                   {(BASELINE_DISPLAY.premiumShare * 100).toFixed(0)}%
                 </strong>
@@ -139,12 +140,39 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
             <div className="opening-note">
               <strong>Tutti i team ricevono lo stesso scenario esterno.</strong>
               <p>
-                Vincerà chi costruisce la risposta migliore nel tempo, non chi
-                indovina un singolo anno.
+                Il 79% indica il mix dei ricavi Aurora Tyres nel segmento
+                Premium, non una quota di mercato globale.
               </p>
             </div>
           </aside>
         </div>
+
+        {round === 1 ? (
+          <section className="competitor-reference-card">
+            <div className="competitor-reference-heading">
+              <div>
+                <div className="card-eyebrow">RIFERIMENTO COMPETITIVO</div>
+                <h2>Scala dei principali competitor</h2>
+              </div>
+              <span>FY2024 · ricavi tire-related · US$ bn</span>
+            </div>
+            <div className="competitor-reference-grid">
+              {COMPETITOR_SCALE_REFERENCE.map((competitor) => (
+                <div key={competitor.name}>
+                  <span>
+                    {competitor.name} · {competitor.country}
+                  </span>
+                  <strong>${competitor.revenueBn.toFixed(2)}bn</strong>
+                </div>
+              ))}
+            </div>
+            <p>
+              Questi dati servono solo come riferimento dimensionale. Il
+              campione non rappresenta l’intero mercato e non consente di
+              calcolare una quota di mercato globale di Aurora Tyres.
+            </p>
+          </section>
+        ) : null}
 
         <section className="decision-window-card">
           <div>
