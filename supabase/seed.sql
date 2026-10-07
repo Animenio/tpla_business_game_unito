@@ -10,7 +10,7 @@ values (
   'CFO AI Business Game — Tecnologie per l’Accounting',
   '2026/2027',
   'registration_open',
-  'aurora-tyres-v0.4'
+  'aurora-tyres-v0.5.2'
 )
 on conflict (code) do update
 set title = excluded.title,
