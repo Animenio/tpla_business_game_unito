@@ -101,7 +101,7 @@ export default async function TeacherLeaderboardPage({
       .eq("session_id", session.id),
     supabase
       .from("game_sessions")
-      .select("ai_submission_form_url, completed_at, results_released_at")
+      .select("*")
       .eq("id", session.id)
       .single(),
     supabase
