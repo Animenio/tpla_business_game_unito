@@ -242,3 +242,46 @@ The recovery landing page accepts both Supabase recovery mechanisms:
 - the optional custom email template using `token_hash` and `type=recovery`.
 
 The PKCE code is exchanged only after the user explicitly presses the confirmation button, so a redirect reaching the landing page does not immediately finalize the recovery session.
+
+
+## Google OAuth (recommended classroom login)
+
+The preferred classroom authentication path is Google OAuth through the institutional UniTo Google Workspace accounts.
+
+Flow:
+
+```
+Register
+→ enter session code
+→ Continue with Google
+→ Supabase Google OAuth
+→ /auth/callback
+→ verify confirmed UniTo email domain
+→ complete_google_session_join(session code)
+→ student team setup OR teacher/admin console
+```
+
+Existing users can use **Continue with Google** from the login tab without entering a session code. New users must use the Register tab and provide the session code before OAuth.
+
+Server-side controls:
+
+- only confirmed Google identities are accepted;
+- accepted domains are `@edu.unito.it` and `@unito.it`;
+- session registration status is checked in PostgreSQL;
+- teacher/admin roles still require the existing session-scoped staff authorization;
+- students cannot self-promote to staff through Google;
+- the session code is stored only temporarily in an HTTP-only cookie during the OAuth redirect.
+
+Google Cloud / Supabase configuration:
+
+1. Create a Google OAuth Web application.
+2. Authorized JavaScript origin:
+   `https://cfo-ai-business-game-unito.vercel.app`
+3. Authorized redirect URI:
+   `https://qzoxmbnikvaqqzojvqta.supabase.co/auth/v1/callback`
+4. Copy the Google Client ID and Client Secret into Supabase:
+   Authentication → Sign In / Providers → Google.
+5. Keep the app callback allowed in Supabase URL Configuration:
+   `https://cfo-ai-business-game-unito.vercel.app/auth/callback`
+
+The Google Client Secret belongs only in Supabase provider configuration and must never be committed to this repository or exposed as a public Vercel variable.
