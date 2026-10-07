@@ -4137,3 +4137,72 @@ button {
     width: 260px;
   }
 }
+
+
+/* Teacher: restart the current simulation run while preserving the class setup */
+.teacher-restart-card {
+  margin-top: 22px;
+  padding: 20px 22px;
+  border: 1px solid #efb6b8;
+  border-radius: 14px;
+  background: #fff8f8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.teacher-restart-card h2 {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.teacher-restart-card p {
+  max-width: 790px;
+  margin: 9px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 11px;
+  line-height: 17px;
+}
+
+.button-danger {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--cfo-brand-red);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cfo-brand-red);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button-danger:hover {
+  background: var(--cfo-brand-red);
+  color: #fff;
+}
+
+.button-danger:focus-visible {
+  outline: 2px solid var(--cfo-brand-red);
+  outline-offset: 2px;
+}
+
+.restart-simulation-button {
+  min-width: 190px;
+  white-space: nowrap;
+}
+
+.leaderboard-restart-card {
+  margin-top: 24px;
+}
+
+@media (max-width: 720px) {
+  .teacher-restart-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .restart-simulation-button {
+    width: 100%;
+  }
+}
