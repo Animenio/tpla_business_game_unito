@@ -8,6 +8,10 @@ export default async function CaseStudyPage() {
   const { supabase, profile, session, team } =
     await requireStudentGameContext();
 
+  if (session.status === "completed") {
+    redirect("/final");
+  }
+
   if (session.status !== "live") {
     redirect("/lobby");
   }
