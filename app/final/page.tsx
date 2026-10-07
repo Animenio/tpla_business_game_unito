@@ -129,11 +129,13 @@ export default async function FinalPage() {
         adjustedEbitdaMargin:
           BASELINE_V05.adjusted_ebitda / BASELINE_V05.revenue,
         premiumShare: BASELINE_V05.premium_share,
+        netDebt: BASELINE_V05.net_debt,
       }
     : {
         revenue: BASELINE_V04.revenue,
         adjustedEbitdaMargin: BASELINE_V04.adjusted_ebitda_margin,
         premiumShare: BASELINE_V04.premium_share,
+        netDebt: BASELINE_V04.net_debt,
       };
 
   const benchmark = benchmarkRows?.[0];
@@ -210,12 +212,15 @@ export default async function FinalPage() {
           <section className="final-value-breakdown-card">
             <div>
               <div className="card-eyebrow">COME SI FORMA IL VALORE</div>
-              <h2>Valore operativo esplicito + continuazione − rischio finanziario</h2>
+              <h2>
+                FGV = PV flussi espliciti + PV terminale − debito netto iniziale − distress
+              </h2>
               <p>
                 Il valore finale non coincide con il solo utile del 2030. Il
-                World Model combina i flussi di cassa espliciti, il valore della
-                continuazione dell’impresa e l’eventuale costo atteso di
-                distress.
+                modello costruisce prima l’Enterprise Value dai flussi
+                attualizzati e dalla continuazione dell’impresa, poi sottrae la
+                posizione finanziaria netta iniziale e l’eventuale costo atteso
+                di distress.
               </p>
             </div>
             <div className="final-value-breakdown-grid">
@@ -235,9 +240,13 @@ export default async function FinalPage() {
                 <small>prima della posizione finanziaria iniziale</small>
               </article>
               <article>
-                <span>Costo atteso di distress</span>
-                <strong>{moneyBn(Number(finalScore.risk_penalty))}</strong>
-                <small>penalità solo se la leva diventa critica</small>
+                <span>Debito iniziale + distress</span>
+                <strong>
+                  −{moneyBn(baseline.netDebt).replace("−", "")}
+                </strong>
+                <small>
+                  debito iniziale; distress: {moneyBn(Number(finalScore.risk_penalty))}
+                </small>
               </article>
             </div>
           </section>
