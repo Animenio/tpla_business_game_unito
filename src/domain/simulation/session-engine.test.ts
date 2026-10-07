@@ -16,7 +16,10 @@ import {
   DEFAULT_DECISIONS,
   MODEL_VERSION as V05_MODEL_VERSION,
 } from "./v05/spec";
-import { MODEL_VERSION as V053_RC_MODEL_VERSION } from "./v053/spec";
+import {
+  DEFAULT_DECISIONS as V053_DEFAULT_DECISIONS,
+  MODEL_VERSION as V053_MODEL_VERSION,
+} from "./v053/spec";
 import {
   decisionFromStoredRow,
   decisionToStoredRow,
@@ -89,6 +92,48 @@ describe("session engine integration", () => {
     );
   });
 
+  it("routes the stable v0.5.3 classroom model through R1 -> R2 -> R3 and preserves the frozen FGV", () => {
+    let state = createSessionOpeningState(V053_MODEL_VERSION);
+    let finalRound = null as ReturnType<typeof simulateSessionRound> | null;
+
+    for (const round of [1, 2, 3] as const) {
+      const result = simulateSessionRound(
+        V053_MODEL_VERSION,
+        state,
+        decisionToStoredRow(V053_DEFAULT_DECISIONS[round]),
+        round,
+      );
+      expect(result.modelVersion).toBe(V053_MODEL_VERSION);
+      expect(result.totalRevenue).toBeGreaterThan(0);
+      expect(result.adjustedEbitdaMargin).toBeGreaterThan(0);
+      state = result.closingState;
+      finalRound = result;
+    }
+
+    const rows = {
+      1: decisionToStoredRow(V053_DEFAULT_DECISIONS[1]),
+      2: decisionToStoredRow(V053_DEFAULT_DECISIONS[2]),
+      3: decisionToStoredRow(V053_DEFAULT_DECISIONS[3]),
+    } satisfies Record<RoundNumber, StoredDecisionRow>;
+
+    const game = simulateSessionGame(V053_MODEL_VERSION, rows);
+
+    expect(game.modelVersion).toBe(V053_MODEL_VERSION);
+    expect(game.finalGameValue).toBeCloseTo(13281.852539946707, 8);
+    expect(game.finalRevenue).toBeCloseTo(
+      finalRound!.totalRevenue,
+      8,
+    );
+    expect(game.finalNetDebt).toBeCloseTo(
+      finalRound!.netDebt,
+      8,
+    );
+    expect(game.strategicHealth).toBeCloseTo(
+      finalRound!.strategicHealth,
+      10,
+    );
+  });
+
   it("keeps the legacy v0.4 routing frozen", () => {
     const rows = {
       1: v04Stored(BALANCED_DECISIONS[1]),
@@ -106,13 +151,14 @@ describe("session engine integration", () => {
   });
 
   it("fails closed on an unknown model version instead of silently using v0.4", () => {
+    expect(usesV05(V053_MODEL_VERSION)).toBe(true);
     expect(usesV05(V05_MODEL_VERSION)).toBe(true);
     expect(usesV05(V04_MODEL_VERSION)).toBe(false);
-    expect(() => usesV05("aurora-tyres-v0.5.3")).toThrow(
-      "UNSUPPORTED_MODEL_VERSION:aurora-tyres-v0.5.3",
+    expect(() => usesV05("aurora-tyres-v0.5.3-rc.1")).toThrow(
+      "UNSUPPORTED_MODEL_VERSION:aurora-tyres-v0.5.3-rc.1",
     );
-    expect(() => usesV05(V053_RC_MODEL_VERSION)).toThrow(
-      `UNSUPPORTED_MODEL_VERSION:${V053_RC_MODEL_VERSION}`,
+    expect(() => usesV05("aurora-tyres-v9.9")).toThrow(
+      "UNSUPPORTED_MODEL_VERSION:aurora-tyres-v9.9",
     );
   });
 });
