@@ -4,6 +4,7 @@ import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { GameRealtime } from "@/src/components/game-realtime";
 import { RoundTimer } from "@/src/components/round-timer";
+import { V05DecisionForm } from "@/src/components/v05-decision-form";
 import {
   DECISION_BASELINE_CONTEXT,
   DECISION_GROUPS,
@@ -14,6 +15,8 @@ import {
   roundNumber,
 } from "@/src/domain/game/round-content";
 import type { DecisionSet } from "@/src/domain/simulation/v04/spec";
+import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
+import type { StoredDecisionRow } from "@/src/domain/simulation/v05/storage";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
 interface DecisionsPageProps {
@@ -154,6 +157,7 @@ export default async function DecisionsPage({
   const search = await searchParams;
   const error = param(search.error);
   const content = ROUND_CONTENT[round];
+  const isV05 = session.model_version === V05_MODEL_VERSION;
 
   return (
     <main className="application-page">
@@ -173,8 +177,9 @@ export default async function DecisionsPage({
           <div>
             <h1>Decisioni {gameRound.period_label}</h1>
             <p>
-              Compilate le 9 voci. Nessun valore è preimpostato; dopo l’invio
-              non potrete più modificarle.
+              {isV05
+                ? "Compilate le 6 decisioni economiche. R&S include l’orientamento e la resilienza unifica scorte e copertura; dopo l’invio non potrete più modificarle."
+                : "Compilate le 9 voci. Nessun valore è preimpostato; dopo l’invio non potrete più modificarle."}
             </p>
           </div>
           <div className="status-badge amber">
@@ -210,83 +215,92 @@ export default async function DecisionsPage({
           </div>
         </section>
 
-        <form action={reviewDecisionsAction}>
-          <input name="round_id" type="hidden" value={gameRound.id} />
-          <input name="round_number" type="hidden" value={round} />
-
-          <div className="decision-columns">
-            {DECISION_GROUPS.map((group) => (
-              <section className="decision-column" key={group.title}>
-                <h2>{group.title}</h2>
-                <div className="decision-card-stack">
-                  {group.keys.map((key) => {
-                    const definition = decisionDefinition(key);
-                    const current = toInputValue(key, values[key]);
-
-                    return (
-                      <article className="decision-card" key={key}>
-                        <div className="decision-card-top">
-                          <label htmlFor={key}>{definition.label}</label>
-                          <details className="decision-info">
-                            <summary>ⓘ Info</summary>
-                            <div className="decision-info-panel">
-                              <strong>Cosa significa</strong>
-                              <p>{DECISION_HELP[key]}</p>
-                              <strong>Riferimento 2025</strong>
-                              <p>{DECISION_BASELINE_CONTEXT[key]}</p>
+        {isV05 ? (
+          <V05DecisionForm
+            draft={draft as (StoredDecisionRow & { objective?: string | null }) | null}
+            round={round}
+            roundId={gameRound.id}
+            selectedObjective={selectedObjective}
+          />
+        ) : (
+          <form action={reviewDecisionsAction}>
+            <input name="round_id" type="hidden" value={gameRound.id} />
+            <input name="round_number" type="hidden" value={round} />
+  
+            <div className="decision-columns">
+              {DECISION_GROUPS.map((group) => (
+                <section className="decision-column" key={group.title}>
+                  <h2>{group.title}</h2>
+                  <div className="decision-card-stack">
+                    {group.keys.map((key) => {
+                      const definition = decisionDefinition(key);
+                      const current = toInputValue(key, values[key]);
+  
+                      return (
+                        <article className="decision-card" key={key}>
+                          <div className="decision-card-top">
+                            <label htmlFor={key}>{definition.label}</label>
+                            <details className="decision-info">
+                              <summary>ⓘ Info</summary>
+                              <div className="decision-info-panel">
+                                <strong>Cosa significa</strong>
+                                <p>{DECISION_HELP[key]}</p>
+                                <strong>Riferimento 2025</strong>
+                                <p>{DECISION_BASELINE_CONTEXT[key]}</p>
+                              </div>
+                            </details>
+                            <div className="decision-value-input">
+                              <input
+                                defaultValue={current}
+                                id={key}
+                                max={inputMax(key)}
+                                min={inputMin(key)}
+                                name={key}
+                                placeholder="Valore"
+                                required
+                                step={inputStep(key)}
+                                type="number"
+                              />
+                              {PERCENT_KEYS.has(key) ? <span>%</span> : null}
                             </div>
-                          </details>
-                          <div className="decision-value-input">
-                            <input
-                              defaultValue={current}
-                              id={key}
-                              max={inputMax(key)}
-                              min={inputMin(key)}
-                              name={key}
-                              placeholder="Valore"
-                              required
-                              step={inputStep(key)}
-                              type="number"
-                            />
-                            {PERCENT_KEYS.has(key) ? <span>%</span> : null}
                           </div>
-                        </div>
-                        <div className="decision-range">{rangeLabel(key)}</div>
-                      </article>
-                    );
-                  })}
+                          <div className="decision-range">{rangeLabel(key)}</div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+  
+            <section className="objective-panel">
+              <div>
+                <strong>Prima di inviare</strong>
+                <p>Qual è il vostro obiettivo principale in questo round?</p>
+                <div className="objective-chips">
+                  {ROUND_OBJECTIVES.map((objective) => (
+                    <label className="objective-chip" key={objective.value}>
+                      <input
+                        defaultChecked={selectedObjective === objective.value}
+                        name="objective"
+                        required
+                        type="radio"
+                        value={objective.value}
+                      />
+                      <span>{objective.label}</span>
+                    </label>
+                  ))}
                 </div>
-              </section>
-            ))}
-          </div>
-
-          <section className="objective-panel">
-            <div>
-              <strong>Prima di inviare</strong>
-              <p>Qual è il vostro obiettivo principale in questo round?</p>
-              <div className="objective-chips">
-                {ROUND_OBJECTIVES.map((objective) => (
-                  <label className="objective-chip" key={objective.value}>
-                    <input
-                      defaultChecked={selectedObjective === objective.value}
-                      name="objective"
-                      required
-                      type="radio"
-                      value={objective.value}
-                    />
-                    <span>{objective.label}</span>
-                  </label>
-                ))}
               </div>
-            </div>
-            <div className="objective-submit">
-              <span>1 clic, nessun testo da scrivere.</span>
-              <button className="button-primary" type="submit">
-                Rivedi le decisioni
-              </button>
-            </div>
-          </section>
-        </form>
+              <div className="objective-submit">
+                <span>1 clic, nessun testo da scrivere.</span>
+                <button className="button-primary" type="submit">
+                  Rivedi le decisioni
+                </button>
+              </div>
+            </section>
+          </form>
+        )}
       </div>
 
       <AppFooter />
