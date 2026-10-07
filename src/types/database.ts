@@ -809,6 +809,10 @@ export type Database = {
         Args: { p_round_id: string; p_window_minutes?: number }
         Returns: Database["public"]["Enums"]["round_status"]
       }
+      teacher_restart_simulation: {
+        Args: { p_session_id: string }
+        Returns: Database["public"]["Enums"]["session_status"]
+      }
       teacher_session_counts: {
         Args: { p_session_id: string }
         Returns: {
