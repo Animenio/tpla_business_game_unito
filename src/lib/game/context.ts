@@ -42,9 +42,7 @@ export async function requireStudentGameContext() {
   const [{ data: session }, { data: profile }] = await Promise.all([
     supabase
       .from("game_sessions")
-      .select(
-        "id, code, title, status, model_version, started_at, academic_year, is_test, results_released_at",
-      )
+      .select("*")
       .eq("id", membership.session_id)
       .single(),
     supabase
