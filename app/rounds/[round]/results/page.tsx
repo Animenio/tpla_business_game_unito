@@ -3,10 +3,12 @@ import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { GameRealtime } from "@/src/components/game-realtime";
 import { BASELINE_2025 as BASELINE_V04 } from "@/src/domain/simulation/v04/spec";
+import { BASELINE_2025 as BASELINE_V05 } from "@/src/domain/simulation/v05/spec";
+import { BASELINE_2025 as BASELINE_V053 } from "@/src/domain/simulation/v053/spec";
 import {
-  BASELINE_2025 as BASELINE_V05,
-  MODEL_VERSION as V05_MODEL_VERSION,
-} from "@/src/domain/simulation/v05/spec";
+  V053_MODEL_VERSION,
+  isReducedDecisionModelVersion,
+} from "@/src/domain/simulation/model-version";
 import { roundNumber } from "@/src/domain/game/round-content";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
@@ -114,15 +116,21 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
     );
   }
 
-  const isV05 = session.model_version === V05_MODEL_VERSION;
-  const baseline = isV05
+  const isReducedModel = isReducedDecisionModelVersion(
+    session.model_version,
+  );
+  const reducedBaseline =
+    session.model_version === V053_MODEL_VERSION
+      ? BASELINE_V053
+      : BASELINE_V05;
+  const baseline = isReducedModel
     ? {
-        revenue: BASELINE_V05.revenue,
-        adjustedEbitda: BASELINE_V05.adjusted_ebitda,
+        revenue: reducedBaseline.revenue,
+        adjustedEbitda: reducedBaseline.adjusted_ebitda,
         adjustedEbitdaMargin:
-          BASELINE_V05.adjusted_ebitda / BASELINE_V05.revenue,
-        netDebt: BASELINE_V05.net_debt,
-        premiumShare: BASELINE_V05.premium_share,
+          reducedBaseline.adjusted_ebitda / reducedBaseline.revenue,
+        netDebt: reducedBaseline.net_debt,
+        premiumShare: reducedBaseline.premium_share,
       }
     : {
         revenue: BASELINE_V04.revenue,
@@ -276,10 +284,10 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
                 </dd>
               </div>
               <div>
-                <dt>{isV05 ? "CAPACITÀ / RISCHIO" : "RISCHIO"}</dt>
+                <dt>{isReducedModel ? "CAPACITÀ / RISCHIO" : "RISCHIO"}</dt>
                 <dd>
-                  {isV05
-                    ? "Nel v0.5.2 il CapEx influenza la capacità con un anno di ritardo, mentre la resilienza combina scorte e copertura commodity. Il risultato aggregato non consente di attribuire l’effetto a una sola leva."
+                  {isReducedModel
+                    ? "Nel modello calibrato il CapEx influenza la capacità con un anno di ritardo, mentre la resilienza combina scorte e copertura commodity. Il risultato aggregato non consente di attribuire l’effetto a una sola leva."
                     : "Le scelte di copertura modificano l’esposizione alla volatilità delle materie prime."}
                 </dd>
               </div>
@@ -291,7 +299,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
                 </dd>
               </div>
             </dl>
-            {isV05 ? (
+            {isReducedModel ? (
               <p className="result-causality-note">
                 Lettura manageriale: questi indicatori descrivono l’esito
                 complessivo della strategia. Per capire il contributo di una

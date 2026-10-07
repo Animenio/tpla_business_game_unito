@@ -14,8 +14,6 @@ import {
 } from "@/src/domain/simulation/v04/spec";
 import { validateStudentDecisionSet } from "@/src/domain/simulation/v04/validation";
 import {
-  MODEL_VERSION as V05_MODEL_VERSION,
-  type DecisionSet as V05DecisionSet,
   type ResiliencePolicy,
   type RndOrientation,
 } from "@/src/domain/simulation/v05/spec";
@@ -24,6 +22,12 @@ import {
   type StoredDecisionRow,
 } from "@/src/domain/simulation/v05/storage";
 import { validateDecisionSet as validateV05DecisionSet } from "@/src/domain/simulation/v05/validation";
+import {
+  V053_MODEL_VERSION,
+  isReducedDecisionModelVersion,
+} from "@/src/domain/simulation/model-version";
+import type { DecisionSet as V053DecisionSet } from "@/src/domain/simulation/v053/spec";
+import { validateDecisionSet as validateV053DecisionSet } from "@/src/domain/simulation/v053/validation";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -70,7 +74,7 @@ function parseV04DecisionSet(formData: FormData): V04DecisionSet {
   };
 }
 
-function parseV05DecisionSet(formData: FormData): V05DecisionSet {
+function parseReducedDecisionSet(formData: FormData): V053DecisionSet {
   return {
     premium_price_positioning: asRatio(
       formData,
@@ -145,12 +149,12 @@ export async function reviewDecisionsAction(formData: FormData) {
 
   let storedDecisions: StoredDecisionRow;
 
-  if (session.model_version === V05_MODEL_VERSION) {
-    const decisions = parseV05DecisionSet(formData);
-    const validation = validateV05DecisionSet(
-      decisions,
-      round,
-    );
+  if (isReducedDecisionModelVersion(session.model_version)) {
+    const decisions = parseReducedDecisionSet(formData);
+    const validation =
+      session.model_version === V053_MODEL_VERSION
+        ? validateV053DecisionSet(decisions, round)
+        : validateV05DecisionSet(decisions, round);
 
     if (!validation.valid) {
       redirect(

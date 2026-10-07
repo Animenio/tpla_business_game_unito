@@ -15,7 +15,7 @@ import {
   roundNumber,
 } from "@/src/domain/game/round-content";
 import type { DecisionSet } from "@/src/domain/simulation/v04/spec";
-import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
+import { isReducedDecisionModelVersion } from "@/src/domain/simulation/model-version";
 import type { StoredDecisionRow } from "@/src/domain/simulation/v05/storage";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
@@ -157,7 +157,7 @@ export default async function DecisionsPage({
   const search = await searchParams;
   const error = param(search.error);
   const content = ROUND_CONTENT[round];
-  const isV05 = session.model_version === V05_MODEL_VERSION;
+  const isReducedModel = isReducedDecisionModelVersion(session.model_version);
 
   return (
     <main className="application-page">
@@ -177,7 +177,7 @@ export default async function DecisionsPage({
           <div>
             <h1>Decisioni {gameRound.period_label}</h1>
             <p>
-              {isV05
+              {isReducedModel
                 ? "Compilate le 6 decisioni economiche. R&S include l’orientamento e la resilienza unifica scorte e copertura; dopo l’invio non potrete più modificarle."
                 : "Compilate le 9 voci. Nessun valore è preimpostato; dopo l’invio non potrete più modificarle."}
             </p>
@@ -215,7 +215,7 @@ export default async function DecisionsPage({
           </div>
         </section>
 
-        {isV05 ? (
+        {isReducedModel ? (
           <V05DecisionForm
             draft={draft as (StoredDecisionRow & { objective?: string | null }) | null}
             round={round}

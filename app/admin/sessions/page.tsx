@@ -9,6 +9,11 @@ import {
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { SELECTED_SESSION_COOKIE } from "@/src/lib/game/context";
+import {
+  V04_MODEL_VERSION,
+  V05_MODEL_VERSION,
+  V053_MODEL_VERSION,
+} from "@/src/domain/simulation/model-version";
 import { createClient } from "@/src/lib/supabase/server";
 
 interface SessionsPageProps {
@@ -210,12 +215,15 @@ export default async function AdminSessionsPage({
               </div>
               <label>
                 <span>World Model</span>
-                <select defaultValue="aurora-tyres-v0.5.2" name="model_version">
-                  <option value="aurora-tyres-v0.4">
-                    Aurora Tyres v0.4 — legacy
+                <select defaultValue={V053_MODEL_VERSION} name="model_version">
+                  <option value={V053_MODEL_VERSION}>
+                    Aurora Tyres v0.5.3 — classroom
                   </option>
-                  <option value="aurora-tyres-v0.5.2">
-                    Aurora Tyres v0.5.2 — calibrato
+                  <option value={V05_MODEL_VERSION}>
+                    Aurora Tyres v0.5.2 — precedente
+                  </option>
+                  <option value={V04_MODEL_VERSION}>
+                    Aurora Tyres v0.4 — legacy
                   </option>
                 </select>
               </label>

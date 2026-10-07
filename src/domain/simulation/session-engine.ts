@@ -6,7 +6,6 @@ import {
   type RoundResult as V04RoundResult,
 } from "./v04/engine";
 import {
-  MODEL_VERSION as V04_MODEL_VERSION,
   type DecisionSet as V04DecisionSet,
   type RoundNumber,
 } from "./v04/spec";
@@ -17,7 +16,20 @@ import {
   type ModelState as V05OpeningState,
   type RoundSimulationResult as V05RoundResult,
 } from "./v05/engine";
-import { MODEL_VERSION as V05_MODEL_VERSION } from "./v05/spec";
+import {
+  createOpeningState as createV053OpeningState,
+  simulateGame as simulateV053Game,
+  simulateRound as simulateV053Round,
+  type ModelState as V053OpeningState,
+  type RoundSimulationResult as V053RoundResult,
+} from "./v053/engine";
+import {
+  V04_MODEL_VERSION,
+  V05_MODEL_VERSION,
+  V053_MODEL_VERSION,
+  assertSupportedModelVersion,
+  isReducedDecisionModelVersion,
+} from "./model-version";
 import {
   decisionFromStoredRow,
   type StoredDecisionRow,
@@ -25,11 +37,13 @@ import {
 
 export type SessionOpeningState =
   | V04OpeningState
-  | V05OpeningState;
+  | V05OpeningState
+  | V053OpeningState;
 
 export type SessionRoundRawResult =
   | V04RoundResult
-  | V05RoundResult;
+  | V05RoundResult
+  | V053RoundResult;
 
 export interface NormalizedRoundResult {
   modelVersion: string;
@@ -62,13 +76,8 @@ export interface NormalizedGameResult {
 }
 
 export function usesV05(modelVersion: string): boolean {
-  if (modelVersion === V05_MODEL_VERSION) {
-    return true;
-  }
-  if (modelVersion === V04_MODEL_VERSION) {
-    return false;
-  }
-  throw new Error(`UNSUPPORTED_MODEL_VERSION:${modelVersion}`);
+  assertSupportedModelVersion(modelVersion);
+  return isReducedDecisionModelVersion(modelVersion);
 }
 
 function v04Decision(row: StoredDecisionRow): V04DecisionSet {
@@ -88,9 +97,15 @@ function v04Decision(row: StoredDecisionRow): V04DecisionSet {
 export function createSessionOpeningState(
   modelVersion: string,
 ): SessionOpeningState {
-  return usesV05(modelVersion)
-    ? createV05OpeningState()
-    : createV04OpeningState();
+  assertSupportedModelVersion(modelVersion);
+
+  if (modelVersion === V053_MODEL_VERSION) {
+    return createV053OpeningState();
+  }
+  if (modelVersion === V05_MODEL_VERSION) {
+    return createV05OpeningState();
+  }
+  return createV04OpeningState();
 }
 
 export function simulateSessionRound(
@@ -99,7 +114,30 @@ export function simulateSessionRound(
   row: StoredDecisionRow,
   round: RoundNumber,
 ): NormalizedRoundResult {
-  if (usesV05(modelVersion)) {
+  assertSupportedModelVersion(modelVersion);
+
+  if (modelVersion === V053_MODEL_VERSION) {
+    const result = simulateV053Round(
+      openingState as V053OpeningState,
+      decisionFromStoredRow(row, round),
+      round,
+    );
+    const annual = result.finalYear;
+
+    return {
+      modelVersion: result.modelVersion,
+      rawResult: result,
+      closingState: result.closingState,
+      totalRevenue: annual.totalRevenue,
+      adjustedEbitdaMargin: annual.adjustedEbitdaMargin,
+      unleveredFreeCashFlow: annual.unleveredFreeCashFlow,
+      netDebt: annual.netDebt,
+      premiumRevenueShare: annual.premiumRevenueShare,
+      strategicHealth: annual.strategicHealth,
+    };
+  }
+
+  if (modelVersion === V05_MODEL_VERSION) {
     const result = simulateV05Round(
       openingState as V05OpeningState,
       decisionFromStoredRow(row, round),
@@ -146,13 +184,21 @@ export function simulateSessionGame(
   modelVersion: string,
   rowsByRound: Record<RoundNumber, StoredDecisionRow>,
 ): NormalizedGameResult {
-  if (usesV05(modelVersion)) {
+  assertSupportedModelVersion(modelVersion);
+
+  if (
+    modelVersion === V053_MODEL_VERSION ||
+    modelVersion === V05_MODEL_VERSION
+  ) {
     const decisions = {
       1: decisionFromStoredRow(rowsByRound[1], 1),
       2: decisionFromStoredRow(rowsByRound[2], 2),
       3: decisionFromStoredRow(rowsByRound[3], 3),
     } as const;
-    const game = simulateV05Game(decisions);
+    const game =
+      modelVersion === V053_MODEL_VERSION
+        ? simulateV053Game(decisions)
+        : simulateV05Game(decisions);
     const final = game.annual[2030];
     const cumulativeUfcf =
       game.annual[2026].unleveredFreeCashFlow +

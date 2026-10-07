@@ -9,7 +9,7 @@ import {
   roundNumber,
 } from "@/src/domain/game/round-content";
 import { requireStudentGameContext } from "@/src/lib/game/context";
-import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
+import { isReducedDecisionModelVersion } from "@/src/domain/simulation/model-version";
 import {
   orientationLabel,
   resilienceLabel,
@@ -78,8 +78,8 @@ export default async function ReviewPage({
   const search = await searchParams;
   const error = param(search.error);
 
-  const isV05 = session.model_version === V05_MODEL_VERSION;
-  const groups = isV05
+  const isReducedModel = isReducedDecisionModelVersion(session.model_version);
+  const groups = isReducedModel
     ? [
         {
           title: "MERCATO",

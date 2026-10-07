@@ -1,17 +1,17 @@
-# Aurora Tyres World Model v0.5.3 RC1
+# Aurora Tyres World Model v0.5.3
 
-This directory contains the isolated **v0.5.3 release candidate** selected after the quantitative balance audit of v0.5.2.
+This directory contains the stable **v0.5.3 classroom model**, promoted without further economic changes from the validated RC1.
 
 ## Status
 
-- Model identifier: `aurora-tyres-v0.5.3-rc.1`
-- Status: **final validation PASSED**, awaiting explicit classroom activation
-- Application routing: **not enabled**
-- Database default: **unchanged**
-- Current production/reference model: **v0.5.2**
+- Model identifier: `aurora-tyres-v0.5.3`
+- Status: **validated and enabled for classroom routing**
+- Application routing: **enabled**
+- Database default: **promoted only after the application deployment is verified**
+- Previous frozen model: **v0.5.2**
 - v0.4 and v0.5.2 remain frozen and untouched
 
-The RC has passed the final numerical, accounting, regression and compatibility gate. It remains deliberately isolated from live session routing until a separate promotion change is approved.
+The former RC1 passed the final numerical, accounting, regression and compatibility gate. The stable identifier changes only the routing/version label; the economic parameters and formulas are unchanged.
 
 ## Why v0.5.3 exists
 
@@ -76,7 +76,7 @@ The complete annual default anchors and the 12-case regression suite are frozen 
 ## Rules for this directory
 
 1. Do not back-port RC calibration changes into `v05/`.
-2. Do not route live sessions to RC1 until the separate classroom-promotion change is approved.
+2. Preserve exact routing by persisted `game_sessions.model_version`; historical v0.5.2 and v0.4 sessions must continue to use their frozen engines.
 3. Any further economic calibration must change the model identifier.
 4. Regression anchors must be updated only when the economics intentionally change and a new balance audit has been run.
 5. Heavy Monte Carlo / optimization audits should remain on research branches; the production test suite keeps only deterministic regression anchors.

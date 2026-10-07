@@ -13,7 +13,7 @@ import {
   V05_DECISION_COUNT,
   V05_ROUND_DECISION_FOCUS,
 } from "@/src/domain/game/round-content-v05";
-import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
+import { isReducedDecisionModelVersion } from "@/src/domain/simulation/model-version";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
 interface BriefingPageProps {
@@ -67,8 +67,8 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
   }
 
   const content = ROUND_CONTENT[round];
-  const isV05 = session.model_version === V05_MODEL_VERSION;
-  const v05Focus = isV05 ? V05_ROUND_DECISION_FOCUS[round] : null;
+  const isReducedModel = isReducedDecisionModelVersion(session.model_version);
+  const v05Focus = isReducedModel ? V05_ROUND_DECISION_FOCUS[round] : null;
 
   return (
     <main className="application-page">
@@ -200,10 +200,10 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
             <div className="card-eyebrow">DECISION WINDOW OPEN</div>
             <h2>
               Il vostro team ha {gameRound.decision_window_minutes} minuti per
-              definire le {isV05 ? V05_DECISION_COUNT : 9} decisioni del Round {round}.
+              definire le {isReducedModel ? V05_DECISION_COUNT : 9} decisioni del Round {round}.
             </h2>
             <p>
-              Definite le {isV05 ? V05_DECISION_COUNT : 9} decisioni, selezionate
+              Definite le {isReducedModel ? V05_DECISION_COUNT : 9} decisioni, selezionate
               l’obiettivo principale del round e inviate.
             </p>
           </div>

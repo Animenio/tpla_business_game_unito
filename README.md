@@ -7,19 +7,19 @@ Applicazione web per il **CFO AI Business Game** del corso Tecnologie per l’Ac
 - Next.js + TypeScript
 - Supabase Auth / PostgreSQL / Realtime
 - Vercel
-- Aurora Tyres World Model v0.5.2 server-side (v0.4 retained for legacy sessions)
+- Aurora Tyres World Model v0.5.3 server-side (v0.5.2 and v0.4 retained for historical sessions)
 
 ## Stato implementazione
 
 ### World Model
 
-Il modello predefinito per le nuove sessioni è **Aurora Tyres v0.5.2**:
+Il modello classroom predefinito nell'app è **Aurora Tyres v0.5.3**:
 
 ```
-src/domain/simulation/v05/
+src/domain/simulation/v053/
 ```
 
-La v0.5.2 usa il set didattico ridotto a 6 decisioni economiche e mantiene test di parità deterministici rispetto al reference twin. La precedente v0.4 resta disponibile in `src/domain/simulation/v04/` esclusivamente per la retrocompatibilità delle sessioni già create. Il routing avviene tramite `game_sessions.model_version`.
+La v0.5.3 usa lo stesso set didattico ridotto a 6 decisioni economiche della v0.5.2, con la calibrazione finale validata tramite audit di game balance e stress test. Le versioni v0.5.2 e v0.4 restano congelate per la retrocompatibilità delle sessioni storiche. Il routing avviene sempre tramite `game_sessions.model_version`; versioni sconosciute falliscono in modo esplicito.
 
 ### Verticali applicative implementate
 
@@ -32,7 +32,7 @@ registrazione / login
 → lobby realtime
 → Data Room
 → briefing del round
-→ 6 decisioni nella v0.5.2 (9 nella v0.4 legacy)
+→ 6 decisioni nelle v0.5.3/v0.5.2 (9 nella v0.4 legacy)
 → review
 → invio immutabile
 → attesa chiusura
@@ -158,7 +158,7 @@ Ogni sessione contiene tre record in `game_rounds`:
 - Round 2 — 2027–2028
 - Round 3 — 2029–2030
 
-Il docente apre un round con una finestra temporale; gli studenti salvano una bozza validata sulle regole della versione associata alla sessione e la inviano tramite RPC. La chiusura del docente instrada il calcolo verso Aurora Tyres v0.5.2 oppure, per le sessioni legacy, v0.4, e salva per ogni team sia il payload completo sia i KPI principali.
+Il docente apre un round con una finestra temporale; gli studenti salvano una bozza validata sulle regole della versione associata alla sessione e la inviano tramite RPC. La chiusura del docente instrada il calcolo verso la versione persistita: Aurora Tyres v0.5.3, v0.5.2 oppure v0.4, e salva per ogni team sia il payload completo sia i KPI principali.
 
 La chiusura anticipata è consentita solo quando tutti i team attivi hanno inviato. Dopo la scadenza il docente può chiudere il round anche se alcuni team non hanno inviato; per quei team non viene generato un risultato.
 

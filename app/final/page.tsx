@@ -5,9 +5,13 @@ import { objectiveLabel } from "@/src/domain/game/round-content";
 import { BASELINE_2025 as BASELINE_V04 } from "@/src/domain/simulation/v04/spec";
 import {
   BASELINE_2025 as BASELINE_V05,
-  MODEL_VERSION as V05_MODEL_VERSION,
   type RoundNumber,
 } from "@/src/domain/simulation/v05/spec";
+import { BASELINE_2025 as BASELINE_V053 } from "@/src/domain/simulation/v053/spec";
+import {
+  V053_MODEL_VERSION,
+  isReducedDecisionModelVersion,
+} from "@/src/domain/simulation/model-version";
 import {
   orientationLabel,
   resilienceLabel,
@@ -45,9 +49,9 @@ function decisionSummary(
     connected_rnd_allocation: number;
   },
   round: RoundNumber,
-  isV05: boolean,
+  isReducedModel: boolean,
 ) {
-  if (isV05) {
+  if (isReducedModel) {
     return [
       `Premium vs mercato ${signedPercent(Number(row.hv_price_change))}`,
       `Standard vs mercato ${signedPercent(Number(row.std_price_change))}`,
@@ -122,14 +126,20 @@ export default async function FinalPage() {
     (decisions ?? []).map((decision) => [decision.round_id, decision]),
   );
 
-  const isV05 = session.model_version === V05_MODEL_VERSION;
-  const baseline = isV05
+  const isReducedModel = isReducedDecisionModelVersion(
+    session.model_version,
+  );
+  const reducedBaseline =
+    session.model_version === V053_MODEL_VERSION
+      ? BASELINE_V053
+      : BASELINE_V05;
+  const baseline = isReducedModel
     ? {
-        revenue: BASELINE_V05.revenue,
+        revenue: reducedBaseline.revenue,
         adjustedEbitdaMargin:
-          BASELINE_V05.adjusted_ebitda / BASELINE_V05.revenue,
-        premiumShare: BASELINE_V05.premium_share,
-        netDebt: BASELINE_V05.net_debt,
+          reducedBaseline.adjusted_ebitda / reducedBaseline.revenue,
+        premiumShare: reducedBaseline.premium_share,
+        netDebt: reducedBaseline.net_debt,
       }
     : {
         revenue: BASELINE_V04.revenue,
@@ -208,7 +218,7 @@ export default async function FinalPage() {
           </div>
         </section>
 
-        {isV05 ? (
+        {isReducedModel ? (
           <section className="final-value-breakdown-card">
             <div>
               <div className="card-eyebrow">COME SI FORMA IL VALORE</div>
@@ -303,7 +313,7 @@ export default async function FinalPage() {
                         ? decisionSummary(
                             decision,
                             round.round_number as RoundNumber,
-                            isV05,
+                            isReducedModel,
                           )
                         : "Decisioni non disponibili."}
                     </p>
