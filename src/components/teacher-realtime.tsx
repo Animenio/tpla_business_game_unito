@@ -30,7 +30,7 @@ export function TeacherRealtime({ sessionId }: TeacherRealtimeProps) {
       ] = await Promise.all([
         supabase
           .from("game_sessions")
-          .select("status, updated_at, completed_at")
+          .select("status, updated_at, completed_at, results_released_at")
           .eq("id", sessionId)
           .maybeSingle(),
         supabase
