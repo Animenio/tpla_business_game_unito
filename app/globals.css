@@ -3846,3 +3846,68 @@ button {
 .auth-separator + .login-form {
   margin-top: 10px;
 }
+
+
+.session-type-note {
+  margin-top: -6px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  background: var(--cfo-status-blue-bg);
+  color: var(--cfo-status-blue);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.session-code-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.session-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+}
+
+.session-kind-badge.test {
+  background: var(--cfo-status-blue-bg);
+  color: var(--cfo-status-blue);
+}
+
+.session-kind-badge.classroom {
+  background: var(--cfo-status-green-bg);
+  color: var(--cfo-status-green);
+}
+
+.test-session-banner {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #c9d8e7;
+  border-radius: 11px;
+  background: var(--cfo-status-blue-bg);
+}
+
+.test-session-banner strong,
+.test-session-banner span {
+  display: block;
+}
+
+.test-session-banner strong {
+  color: var(--cfo-status-blue);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.test-session-banner span {
+  margin-top: 5px;
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+  line-height: 16px;
+}
