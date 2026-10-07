@@ -85,7 +85,7 @@ export default async function AdminSessionsPage({
       supabase
         .from("game_sessions")
         .select(
-          "id, code, title, academic_year, status, model_version, created_at, started_at, completed_at",
+          "id, code, title, academic_year, status, model_version, created_at, started_at, completed_at, is_test",
         )
         .in("id", sessionIds)
         .order("created_at", { ascending: false }),
@@ -194,6 +194,21 @@ export default async function AdminSessionsPage({
                 />
               </label>
               <label>
+                <span>Tipo sessione</span>
+                <select defaultValue="test" name="session_type">
+                  <option value="test">
+                    Test — qualsiasi account Google verificato
+                  </option>
+                  <option value="classroom">
+                    Classe reale — solo account Google UniTo
+                  </option>
+                </select>
+              </label>
+              <div className="session-type-note">
+                Le sessioni Test servono per collaudi e demo. Le sessioni di
+                Classe reale accettano solo account @edu.unito.it o @unito.it.
+              </div>
+              <label>
                 <span>World Model</span>
                 <select defaultValue="aurora-tyres-v0.4" name="model_version">
                   <option value="aurora-tyres-v0.4">
@@ -234,7 +249,18 @@ export default async function AdminSessionsPage({
                   >
                     <div className="session-row-top">
                       <div>
-                        <strong>{session.code}</strong>
+                        <div className="session-code-line">
+                          <strong>{session.code}</strong>
+                          <span
+                            className={
+                              session.is_test
+                                ? "session-kind-badge test"
+                                : "session-kind-badge classroom"
+                            }
+                          >
+                            {session.is_test ? "TEST" : "CLASSE REALE"}
+                          </span>
+                        </div>
                         <h3>{session.title}</h3>
                       </div>
                       <span
