@@ -37,6 +37,7 @@ function decisionSummary(
   row: {
     hv_price_change: number;
     std_price_change: number;
+    marketing_change: number;
     rnd_pct: number;
     capex_pct: number;
     inventory_days: number;
@@ -50,6 +51,7 @@ function decisionSummary(
     return [
       `Premium vs mercato ${signedPercent(Number(row.hv_price_change))}`,
       `Standard vs mercato ${signedPercent(Number(row.std_price_change))}`,
+      `Marketing ${signedPercent(Number(row.marketing_change))}`,
       `R&S ${percent(Number(row.rnd_pct))} (${orientationLabel(Number(row.connected_rnd_allocation), round)})`,
       `CapEx ${percent(Number(row.capex_pct))}`,
       `Resilienza ${resilienceLabel(Number(row.inventory_days), Number(row.natural_rubber_hedge))}`,
@@ -109,7 +111,7 @@ export default async function FinalPage() {
     ? await supabase
         .from("team_round_decisions")
         .select(
-          "round_id, objective, hv_price_change, std_price_change, rnd_pct, capex_pct, inventory_days, natural_rubber_hedge, connected_rnd_allocation",
+          "round_id, objective, hv_price_change, std_price_change, marketing_change, rnd_pct, capex_pct, inventory_days, natural_rubber_hedge, connected_rnd_allocation",
         )
         .eq("team_id", team.id)
         .in("round_id", roundIds)
