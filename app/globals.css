@@ -4380,3 +4380,359 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Reduced-model decision form: stable alignment and explicit submission area */
+.decision-objective-card {
+  margin-top: 24px;
+  padding: 20px 22px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 14px;
+  background: var(--cfo-surface-white);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.decision-objective-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.decision-objective-card p {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 11px;
+  line-height: 17px;
+}
+
+.objective-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.objective-options label {
+  position: relative;
+  cursor: pointer;
+}
+
+.objective-options input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.objective-options span {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 999px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.objective-options input:checked + span {
+  border-color: var(--cfo-brand-red);
+  background: #fff3f1;
+  color: var(--cfo-brand-red);
+}
+
+.decisions-submit-row {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 12px;
+  background: var(--cfo-surface-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.decisions-submit-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.decisions-submit-row strong {
+  font-size: 12px;
+}
+
+.decisions-submit-row span {
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+}
+
+.decisions-submit-row .button-primary {
+  min-width: 170px;
+  flex: 0 0 auto;
+}
+
+/* Final suspense and teacher reveal */
+.final-results-locked {
+  margin-top: 16px;
+  padding: 28px 30px;
+  border: 1px solid #e5c98e;
+  border-radius: 16px;
+  background: #fffaf0;
+}
+
+.final-results-locked h2 {
+  margin: 8px 0 0;
+  font-size: 26px;
+}
+
+.final-results-locked p {
+  max-width: 850px;
+  margin: 10px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.final-results-locked-status {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.final-results-locked-status > strong {
+  font-size: 11px;
+}
+
+.class-debrief-summary {
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.class-debrief-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.class-debrief-heading h2 {
+  margin: 8px 0 0;
+  font-size: 22px;
+}
+
+.class-debrief-heading > span {
+  color: var(--cfo-text-secondary);
+  font-size: 11px;
+}
+
+.class-debrief-kpis {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.class-debrief-kpis article {
+  min-height: 92px;
+  padding: 14px;
+  border-radius: 11px;
+  background: var(--cfo-surface-subtle);
+}
+
+.class-debrief-kpis span,
+.class-round-debrief-grid dt {
+  color: var(--cfo-text-secondary);
+  font-size: 9px;
+}
+
+.class-debrief-kpis strong {
+  display: block;
+  margin-top: 9px;
+  font-size: 19px;
+}
+
+.class-round-debrief-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.class-round-debrief-grid > article {
+  padding: 16px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 12px;
+}
+
+.class-round-debrief-title {
+  display: grid;
+  gap: 4px;
+}
+
+.class-round-debrief-title span {
+  color: var(--cfo-brand-red);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.class-round-debrief-title strong {
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.class-round-debrief-grid dl {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 7px;
+}
+
+.class-round-debrief-grid dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 7px;
+  border-top: 1px solid var(--cfo-border-default);
+}
+
+.class-round-debrief-grid dd {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.results-release-card {
+  margin-top: 18px;
+  padding: 20px 22px;
+  border: 1px solid #e5c98e;
+  border-radius: 14px;
+  background: #fffaf0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.results-release-card h2 {
+  margin: 7px 0 0;
+  font-size: 20px;
+}
+
+.results-release-card p {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 11px;
+  line-height: 17px;
+}
+
+.results-release-stats {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.results-release-stats span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--cfo-text-secondary);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.results-release-button {
+  min-width: 190px;
+}
+
+.results-release-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.leaderboard-table-card > h2 {
+  margin: 8px 0 18px;
+  font-size: 20px;
+}
+
+.submission-readiness-list {
+  display: grid;
+  gap: 8px;
+}
+
+.submission-readiness-list > div {
+  min-height: 52px;
+  padding: 9px 12px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 70px auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.submission-readiness-list > div > strong {
+  font-size: 11px;
+}
+
+.submission-readiness-list small {
+  color: var(--cfo-text-secondary);
+  text-align: right;
+}
+
+@media (max-width: 1100px) {
+  .decision-card-top {
+    grid-template-columns: minmax(0, 1fr) auto minmax(120px, 38%);
+  }
+
+  .class-round-debrief-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .class-debrief-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .decision-objective-card,
+  .decisions-submit-row,
+  .results-release-card,
+  .class-debrief-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .objective-options {
+    justify-content: flex-start;
+  }
+
+  .decisions-submit-row .button-primary,
+  .results-release-button {
+    width: 100%;
+  }
+
+  .class-debrief-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .submission-readiness-list > div {
+    grid-template-columns: 1fr auto;
+  }
+
+  .submission-readiness-list small {
+    text-align: left;
+  }
+}
