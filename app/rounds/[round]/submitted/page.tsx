@@ -131,7 +131,7 @@ export default async function SubmittedPage({ params }: SubmittedPageProps) {
           {gameRound.status === "open" ? (
             <div className="waiting-timer">
               <span>Tempo residuo</span>
-              <RoundTimer closesAt={gameRound.closes_at} roundId={gameRound.id} />
+              <RoundTimer closesAt={gameRound.closes_at} />
             </div>
           ) : (
             <div className="status-badge green">
