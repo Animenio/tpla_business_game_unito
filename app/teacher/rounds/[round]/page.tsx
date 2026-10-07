@@ -71,6 +71,11 @@ function plainPercent(value: number | null) {
   return `${(value * 100).toFixed(0)}%`;
 }
 
+function moneyBn(value: number | null) {
+  if (value === null) return "—";
+  return `€${(value / 1000).toFixed(2)}bn`;
+}
+
 function submissionTime(value: string | null) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("it-IT", {
@@ -125,7 +130,9 @@ export default async function TeacherRoundPage({
         .eq("round_id", gameRound.id),
       supabase
         .from("team_round_results")
-        .select("team_id")
+        .select(
+          "team_id, total_revenue, adjusted_ebitda_margin, net_debt, strategic_health",
+        )
         .eq("round_id", gameRound.id),
     ]);
 
@@ -172,6 +179,18 @@ export default async function TeacherRoundPage({
       )
     : null;
   const canFinalize = totalTeams > 0 && submittedCount === totalTeams;
+  const resultRevenueMedian = median(
+    (results ?? []).map((result) => Number(result.total_revenue)),
+  );
+  const resultEbitdaMarginMedian = median(
+    (results ?? []).map((result) => Number(result.adjusted_ebitda_margin)),
+  );
+  const resultNetDebtMedian = median(
+    (results ?? []).map((result) => Number(result.net_debt)),
+  );
+  const resultStrategicHealthMedian = median(
+    (results ?? []).map((result) => Number(result.strategic_health)),
+  );
 
   return (
     <main className="application-page">
@@ -209,60 +228,94 @@ export default async function TeacherRoundPage({
         {error ? <div className="page-error teacher-error">{error}</div> : null}
 
         <section className="live-metrics">
-          <article>
-            <span>Inviati</span>
-            <strong>
-              {submittedCount} / {totalTeams}
-            </strong>
-            <small>
-              {Math.max(0, totalTeams - submittedCount)} team ancora al lavoro
-            </small>
-          </article>
-          <article>
-            <span>Prezzo Premium mediano</span>
-            <strong>{signedPercent(premiumMedian)}</strong>
-            <small>Vista live della classe</small>
-          </article>
-          {isReducedModel ? (
+          {gameRound.status === "open" ? (
             <>
               <article>
-                <span>Resilienza prevalente</span>
-                <strong>{reducedResilienceMode ?? "—"}</strong>
-                <small>Politica più scelta dalla classe</small>
+                <span>Inviati</span>
+                <strong>
+                  {submittedCount} / {totalTeams}
+                </strong>
+                <small>
+                  {Math.max(0, totalTeams - submittedCount)} team ancora al lavoro
+                </small>
               </article>
               <article>
-                <span>Orientamento R&S prevalente</span>
-                <strong>{reducedOrientationMode ?? "—"}</strong>
-                <small>Composizione più scelta della R&S</small>
+                <span>Prezzo Premium mediano</span>
+                <strong>{signedPercent(premiumMedian)}</strong>
+                <small>Vista live della classe</small>
+              </article>
+              {isReducedModel ? (
+                <>
+                  <article>
+                    <span>Resilienza prevalente</span>
+                    <strong>{reducedResilienceMode ?? "—"}</strong>
+                    <small>Politica più scelta dalla classe</small>
+                  </article>
+                  <article>
+                    <span>Orientamento R&S prevalente</span>
+                    <strong>{reducedOrientationMode ?? "—"}</strong>
+                    <small>Composizione più scelta della R&S</small>
+                  </article>
+                </>
+              ) : (
+                <>
+                  <article>
+                    <span>Copertura gomma mediana</span>
+                    <strong>{plainPercent(hedgeMedian)}</strong>
+                    <small>Risposta allo shock</small>
+                  </article>
+                  <article>
+                    <span>Scorte mediane</span>
+                    <strong>
+                      {inventoryMedian === null
+                        ? "—"
+                        : `${Math.round(inventoryMedian)} giorni`}
+                    </strong>
+                    <small>Scelte sul capitale circolante</small>
+                  </article>
+                </>
+              )}
+              <article>
+                <span>Stato round</span>
+                <strong>OPEN</strong>
+                <small>Finestra decisionale</small>
               </article>
             </>
           ) : (
             <>
               <article>
-                <span>Copertura gomma mediana</span>
-                <strong>{plainPercent(hedgeMedian)}</strong>
-                <small>Risposta allo shock</small>
+                <span>Risultati calcolati</span>
+                <strong>
+                  {results?.length ?? 0} / {totalTeams}
+                </strong>
+                <small>Team elaborati nel round</small>
               </article>
               <article>
-                <span>Scorte mediane</span>
+                <span>Ricavi mediani</span>
+                <strong>{moneyBn(resultRevenueMedian)}</strong>
+                <small>Risultato economico della classe</small>
+              </article>
+              <article>
+                <span>Margine EBITDA mediano</span>
+                <strong>{plainPercent(resultEbitdaMarginMedian)}</strong>
+                <small>Redditività operativa</small>
+              </article>
+              <article>
+                <span>Debito netto mediano</span>
+                <strong>{moneyBn(resultNetDebtMedian)}</strong>
+                <small>Valore negativo = cassa netta</small>
+              </article>
+              <article>
+                <span>Solidità strategica mediana</span>
                 <strong>
-                  {inventoryMedian === null
+                  {resultStrategicHealthMedian === null
                     ? "—"
-                    : `${Math.round(inventoryMedian)} giorni`}
+                    : `${resultStrategicHealthMedian.toFixed(2)}x`}
                 </strong>
-                <small>Scelte sul capitale circolante</small>
+                <small>Indice del World Model</small>
               </article>
             </>
           )}
-          <article>
-            <span>Stato round</span>
-            <strong>{gameRound.status === "open" ? "OPEN" : "CLOSED"}</strong>
-            <small>
-              {gameRound.status === "open"
-                ? "Finestra decisionale"
-                : `${results?.length ?? 0} risultati calcolati`}
-            </small>
-          </article>
         </section>
 
         <div className="teacher-live-grid">
