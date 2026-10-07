@@ -12,7 +12,7 @@ import {
   roundNumber,
 } from "@/src/domain/game/round-content";
 import { requireTeacherGameContext } from "@/src/lib/game/context";
-import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
+import { isReducedDecisionModelVersion } from "@/src/domain/simulation/model-version";
 
 interface TeacherRoundPageProps {
   params: Promise<{ round: string }>;
@@ -123,7 +123,7 @@ export default async function TeacherRoundPage({
   const error = param(search.error);
   const totalTeams = teams?.length ?? 0;
   const submittedCount = submitted.length;
-  const isV05 = session.model_version === V05_MODEL_VERSION;
+  const isReducedModel = isReducedDecisionModelVersion(session.model_version);
 
   return (
     <main className="application-page">
@@ -233,7 +233,7 @@ export default async function TeacherRoundPage({
                         ? objectiveLabel(decision.objective)
                         : "—"}
                     </span>
-                    <span>{isSubmitted ? (isV05 ? "6/6" : "9/9") : "—"}</span>
+                    <span>{isSubmitted ? (isReducedModel ? "6/6" : "9/9") : "—"}</span>
                   </div>
                 );
               })}
