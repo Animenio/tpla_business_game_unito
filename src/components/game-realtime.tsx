@@ -53,7 +53,7 @@ export function GameRealtime({
       const [{ data: session }, { data: rounds }] = await Promise.all([
         supabase
           .from("game_sessions")
-          .select("status, results_released_at")
+          .select("*")
           .eq("id", sessionId)
           .maybeSingle(),
         supabase
