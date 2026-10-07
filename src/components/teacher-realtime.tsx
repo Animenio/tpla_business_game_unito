@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 
@@ -24,7 +24,7 @@ export function TeacherRealtime({ sessionId }: TeacherRealtimeProps) {
           table: "game_sessions",
           filter: `id=eq.${sessionId}`,
         },
-        () => router.refresh(),
+        refresh,
       )
       .on(
         "postgres_changes",
@@ -34,7 +34,7 @@ export function TeacherRealtime({ sessionId }: TeacherRealtimeProps) {
           table: "session_members",
           filter: `session_id=eq.${sessionId}`,
         },
-        () => router.refresh(),
+        refresh,
       )
       .on(
         "postgres_changes",
@@ -44,7 +44,7 @@ export function TeacherRealtime({ sessionId }: TeacherRealtimeProps) {
           table: "teams",
           filter: `session_id=eq.${sessionId}`,
         },
-        () => router.refresh(),
+        refresh,
       )
       .on(
         "postgres_changes",
@@ -53,7 +53,7 @@ export function TeacherRealtime({ sessionId }: TeacherRealtimeProps) {
           schema: "public",
           table: "team_members",
         },
-        () => router.refresh(),
+        refresh,
       )
       .subscribe();
 
