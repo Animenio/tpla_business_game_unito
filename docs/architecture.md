@@ -14,7 +14,7 @@ Target stack:
 - Google Forms/Drive for final AI-chat submission
 - deterministic server-side economic simulation engine
 
-The economic World Model v0.4 is the source of truth for simulation formulas and must be translated without reinterpretation.
+Aurora Tyres v0.5.2 is the default economic World Model for new sessions. Aurora Tyres v0.4 remains frozen for legacy-session compatibility. The authoritative engine is selected from the persisted `game_sessions.model_version`; unknown versions fail closed rather than falling back silently.
 
 ## 2. Application boundaries
 
@@ -148,6 +148,7 @@ Economic calculations remain synchronous server-side transactions.
 - one authoritative result per team/year
 - deterministic engine execution
 - version every simulation model
+- route every calculation from the session's persisted model version
 - persist model version with every result
 - persist raw decisions separately from calculated outputs
 - no client-authoritative financial values
