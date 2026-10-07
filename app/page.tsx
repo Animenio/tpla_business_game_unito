@@ -86,8 +86,8 @@ export default async function Home({ searchParams }: HomeProps) {
                   Continua con Google
                 </button>
                 <p className="google-auth-note">
-                  Usa il tuo account Google istituzionale UniTo. Non serve
-                  creare o ricordare una password per il Business Game.
+                  Sessione reale: usa l’account Google UniTo. Le sessioni Test
+                  accettano anche un normale account Google/Gmail verificato.
                 </p>
               </form>
 

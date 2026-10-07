@@ -191,6 +191,19 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           </div>
         </section>
 
+        {session.is_test ? (
+          <section className="test-session-banner">
+            <div>
+              <strong>SESSIONE TEST</strong>
+              <span>
+                Per questa sessione puoi registrare come studenti anche normali
+                account Google/Gmail verificati. Le sessioni di classe reale
+                restano limitate agli account UniTo.
+              </span>
+            </div>
+          </section>
+        ) : null}
+
         {error ? <div className="page-error teacher-error">{error}</div> : null}
 
         {staffMembership.role === "admin" ? (
