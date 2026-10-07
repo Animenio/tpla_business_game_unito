@@ -79,7 +79,7 @@ export default async function ReviewPage({
   const error = param(search.error);
 
   const isReducedModel = isReducedDecisionModelVersion(session.model_version);
-  const groups = isV05
+  const groups = isReducedModel
     ? [
         {
           title: "MERCATO",
