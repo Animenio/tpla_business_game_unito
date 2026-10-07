@@ -756,6 +756,13 @@ export type Database = {
         Args: { p_authorization_id: string }
         Returns: undefined
       }
+      complete_google_session_join: {
+        Args: { p_session_code: string }
+        Returns: {
+          assigned_role: Database["public"]["Enums"]["app_role"]
+          session_id: string
+        }[]
+      }
       create_team: {
         Args: { p_name: string }
         Returns: {
