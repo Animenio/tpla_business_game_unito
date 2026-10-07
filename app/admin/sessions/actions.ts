@@ -49,6 +49,7 @@ export async function createSessionAction(formData: FormData) {
   const title = value(formData, "title");
   const academicYear = value(formData, "academic_year");
   const modelVersion = value(formData, "model_version") || "aurora-tyres-v0.4";
+  const isTest = value(formData, "session_type") === "test";
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_create_session", {
@@ -56,6 +57,7 @@ export async function createSessionAction(formData: FormData) {
     p_title: title,
     p_academic_year: academicYear,
     p_model_version: modelVersion,
+    p_is_test: isTest,
   });
 
   if (error || !data) {
