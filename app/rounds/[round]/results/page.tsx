@@ -140,6 +140,24 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
   const premiumDelta =
     result.premium_revenue_share - baseline.premiumShare;
 
+  const cashSignal =
+    result.unlevered_free_cash_flow >= 0
+      ? `Il flusso di cassa libero del round è positivo (${moneyM(result.unlevered_free_cash_flow)}).`
+      : `Il flusso di cassa libero del round è negativo (${moneyM(result.unlevered_free_cash_flow)}).`;
+  const debtSignal =
+    netDebtDelta <= 0
+      ? ` La posizione finanziaria è migliorata di ${moneyBn(Math.abs(netDebtDelta))} rispetto al 2025.`
+      : ` Il debito netto è aumentato di ${moneyBn(Math.abs(netDebtDelta))} rispetto al 2025.`;
+  const premiumMove = `${Math.abs(premiumDelta * 100).toFixed(1)} pp`;
+  const mixSignal =
+    premiumDelta >= 0
+      ? `La quota di ricavi Premium è salita di ${premiumMove} rispetto al 2025.`
+      : `La quota di ricavi Premium è scesa di ${premiumMove} rispetto al 2025.`;
+  const strategicSignal =
+    result.strategic_health >= 1
+      ? `L’indice di solidità strategica è ${result.strategic_health.toFixed(2)}x, sopra il riferimento iniziale 1,00x.`
+      : `L’indice di solidità strategica è ${result.strategic_health.toFixed(2)}x, sotto il riferimento iniziale 1,00x.`;
+
   const revenueIndex =
     (result.total_revenue / baseline.revenue) * 100;
   const ebitdaAmount =
@@ -248,35 +266,39 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
             <dl>
               <div>
                 <dt>MIX</dt>
-                <dd>
-                  Il mix Premium ha modificato la composizione dei ricavi e il
-                  profilo di redditività.
-                </dd>
+                <dd>{mixSignal}</dd>
               </div>
               <div>
                 <dt>CASSA</dt>
                 <dd>
-                  {isV05
-                    ? "CapEx e scorte hanno modificato l’assorbimento di cassa."
-                    : "CapEx, scorte e tempi di incasso hanno modificato l’assorbimento di cassa."}
+                  {cashSignal}
+                  {debtSignal}
                 </dd>
               </div>
               <div>
-                <dt>RISCHIO</dt>
+                <dt>{isV05 ? "CAPACITÀ / RISCHIO" : "RISCHIO"}</dt>
                 <dd>
                   {isV05
-                    ? "La politica di resilienza ha modificato scorte, copertura e rischio di continuità della supply chain."
-                    : "Le scelte di copertura hanno modificato l’esposizione alla volatilità delle materie prime."}
+                    ? "Nel v0.5.2 il CapEx influenza la capacità con un anno di ritardo, mentre la resilienza combina scorte e copertura commodity. Il risultato aggregato non consente di attribuire l’effetto a una sola leva."
+                    : "Le scelte di copertura modificano l’esposizione alla volatilità delle materie prime."}
                 </dd>
               </div>
               <div>
-                <dt>LUNGO PERIODO</dt>
+                <dt>STRATEGIA</dt>
                 <dd>
-                  R&S, marketing e investimenti accumulano effetti strategici
-                  che proseguono nei round successivi.
+                  {strategicSignal} R&S, marketing e investimenti possono
+                  accumulare effetti che proseguono nei round successivi.
                 </dd>
               </div>
             </dl>
+            {isV05 ? (
+              <p className="result-causality-note">
+                Lettura manageriale: questi indicatori descrivono l’esito
+                complessivo della strategia. Per capire il contributo di una
+                singola decisione serve un confronto controfattuale, non basta
+                osservare il risultato finale del round.
+              </p>
+            ) : null}
           </section>
         </div>
 

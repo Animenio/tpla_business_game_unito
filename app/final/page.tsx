@@ -129,11 +129,13 @@ export default async function FinalPage() {
         adjustedEbitdaMargin:
           BASELINE_V05.adjusted_ebitda / BASELINE_V05.revenue,
         premiumShare: BASELINE_V05.premium_share,
+        netDebt: BASELINE_V05.net_debt,
       }
     : {
         revenue: BASELINE_V04.revenue,
         adjustedEbitdaMargin: BASELINE_V04.adjusted_ebitda_margin,
         premiumShare: BASELINE_V04.premium_share,
+        netDebt: BASELINE_V04.net_debt,
       };
 
   const benchmark = benchmarkRows?.[0];
@@ -205,6 +207,50 @@ export default async function FinalPage() {
             <strong>{Number(finalScore.strategic_health).toFixed(2)}x</strong>
           </div>
         </section>
+
+        {isV05 ? (
+          <section className="final-value-breakdown-card">
+            <div>
+              <div className="card-eyebrow">COME SI FORMA IL VALORE</div>
+              <h2>
+                FGV = PV flussi espliciti + PV terminale − debito netto iniziale − distress
+              </h2>
+              <p>
+                Il valore finale non coincide con il solo utile del 2030. Il
+                modello costruisce prima l’Enterprise Value dai flussi
+                attualizzati e dalla continuazione dell’impresa, poi sottrae la
+                posizione finanziaria netta iniziale e l’eventuale costo atteso
+                di distress.
+              </p>
+            </div>
+            <div className="final-value-breakdown-grid">
+              <article>
+                <span>PV flussi espliciti</span>
+                <strong>{moneyBn(Number(finalScore.pv_explicit_ufcf))}</strong>
+                <small>UFCF 2026–2031 attualizzati</small>
+              </article>
+              <article>
+                <span>PV valore terminale</span>
+                <strong>{moneyBn(Number(finalScore.pv_terminal_value))}</strong>
+                <small>continuità operativa oltre il piano</small>
+              </article>
+              <article>
+                <span>Enterprise value</span>
+                <strong>{moneyBn(Number(finalScore.enterprise_value))}</strong>
+                <small>prima della posizione finanziaria iniziale</small>
+              </article>
+              <article>
+                <span>Debito iniziale + distress</span>
+                <strong>
+                  −{moneyBn(baseline.netDebt).replace("−", "")}
+                </strong>
+                <small>
+                  debito iniziale; distress: {moneyBn(Number(finalScore.risk_penalty))}
+                </small>
+              </article>
+            </div>
+          </section>
+        ) : null}
 
         <section className="final-kpis">
           <article>

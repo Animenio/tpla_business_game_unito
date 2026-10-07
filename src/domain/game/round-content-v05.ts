@@ -76,3 +76,30 @@ export function v05OrientationOptions(round: RoundNumber) {
     ? (["Core", "Bilanciato"] as const)
     : (["Core", "Bilanciato", "Connected"] as const);
 }
+
+
+export const V05_DECISION_COUNT = 6;
+
+export const V05_ROUND_DECISION_FOCUS: Record<
+  RoundNumber,
+  {
+    title: string;
+    body: string;
+  }
+> = {
+  1: {
+    title: "Costruite capacità prima che serva",
+    body:
+      "CapEx e R&S hanno effetti che proseguono nei round successivi. La capacità aggiuntiva entra con un anno di ritardo: il Round 1 serve anche a preparare il 2027–2028, non solo a massimizzare il risultato immediato.",
+  },
+  2: {
+    title: "Gestite il trade-off tra protezione e cassa",
+    body:
+      "La politica di resilienza combina scorte e copertura della gomma. Più protezione riduce alcune esposizioni operative, ma assorbe capitale e può avere un costo: valutate il compromesso insieme a prezzi, margini e investimenti.",
+  },
+  3: {
+    title: "La tecnologia premia la preparazione accumulata",
+    body:
+      "Nel finale diventano più rilevanti EV e connected tyre. L’orientamento della R&S modifica la composizione dell’innovazione, mentre le scelte dei round precedenti continuano a influenzare capacità, brand e solidità strategica.",
+  },
+};
