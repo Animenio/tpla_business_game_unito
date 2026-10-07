@@ -1,4 +1,4 @@
-export const MODEL_VERSION = "aurora-tyres-v0.5.3-rc.1" as const;
+export const MODEL_VERSION = "aurora-tyres-v0.5.3" as const;
 
 export type ModelVersion = typeof MODEL_VERSION;
 export type RoundNumber = 1 | 2 | 3;
