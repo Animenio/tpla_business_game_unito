@@ -833,7 +833,6 @@ export type Database = {
         Args: { p_code: string; p_email: string }
         Returns: boolean
       }
-      validate_session_code: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
       ai_submission_status: "submitted" | "verified"
