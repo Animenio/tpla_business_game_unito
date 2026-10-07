@@ -3,17 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacherGameContext } from "@/src/lib/game/context";
+import type { RoundNumber } from "@/src/domain/simulation/v04/spec";
 import {
-  createOpeningState,
-  simulateGame,
-  simulateRound,
-  type OpeningState,
-  type RoundResult,
-} from "@/src/domain/simulation/v04/engine";
-import {
-  type DecisionSet,
-  type RoundNumber,
-} from "@/src/domain/simulation/v04/spec";
+  createSessionOpeningState,
+  simulateSessionGame,
+  simulateSessionRound,
+  type SessionOpeningState,
+} from "@/src/domain/simulation/session-engine";
+import type { StoredDecisionRow } from "@/src/domain/simulation/v05/storage";
 import { roundNumber } from "@/src/domain/game/round-content";
 import type { Json } from "@/src/types/database";
 
@@ -57,7 +54,7 @@ function teacherRoundError(message: string) {
   return "Operazione sul round non completata. Riprova.";
 }
 
-function decisionSet(row: {
+function storedDecision(row: {
   hv_price_change: number;
   std_price_change: number;
   marketing_change: number;
@@ -67,7 +64,7 @@ function decisionSet(row: {
   receivable_days: number;
   natural_rubber_hedge: number;
   connected_rnd_allocation: number;
-}): DecisionSet {
+}): StoredDecisionRow {
   return {
     hv_price_change: Number(row.hv_price_change),
     std_price_change: Number(row.std_price_change),
@@ -236,10 +233,10 @@ export async function finalizeRoundAction(formData: FormData) {
   const resultPayload: Array<Record<string, Json | string | number>> = [];
 
   for (const submission of submissions ?? []) {
-    let openingState: OpeningState;
+    let openingState: SessionOpeningState;
 
     if (round === 1) {
-      openingState = createOpeningState();
+      openingState = createSessionOpeningState(session.model_version);
     } else {
       const { data: previousResult } = await supabase
         .from("team_round_results")
@@ -249,7 +246,9 @@ export async function finalizeRoundAction(formData: FormData) {
         .maybeSingle();
 
       const parsedPrevious =
-        previousResult?.result as unknown as RoundResult | undefined;
+        previousResult?.result as unknown as
+          | { closingState?: SessionOpeningState }
+          | undefined;
 
       if (!parsedPrevious?.closingState) {
         redirect(
@@ -263,23 +262,23 @@ export async function finalizeRoundAction(formData: FormData) {
       openingState = parsedPrevious.closingState;
     }
 
-    const result = simulateRound(
+    const result = simulateSessionRound(
+      session.model_version,
       openingState,
-      decisionSet(submission),
+      storedDecision(submission),
       round,
     );
 
     resultPayload.push({
       team_id: submission.team_id,
       model_version: result.modelVersion,
-      result: result as unknown as Json,
-      total_revenue: result.operating.totalRevenue,
-      adjusted_ebitda_margin: result.operating.adjustedEbitdaMargin,
-      unlevered_free_cash_flow:
-        result.financial.unleveredFreeCashFlow,
-      net_debt: result.financial.netDebt,
-      premium_revenue_share: result.operating.premiumRevenueShare,
-      strategic_health: result.operating.strategicHealth,
+      result: result.rawResult as unknown as Json,
+      total_revenue: result.totalRevenue,
+      adjusted_ebitda_margin: result.adjustedEbitdaMargin,
+      unlevered_free_cash_flow: result.unleveredFreeCashFlow,
+      net_debt: result.netDebt,
+      premium_revenue_share: result.premiumRevenueShare,
+      strategic_health: result.strategicHealth,
     });
   }
 
@@ -336,7 +335,7 @@ export async function finalizeRoundAction(formData: FormData) {
         );
       }
 
-      const decisionsByRound = {} as Record<RoundNumber, DecisionSet>;
+      const decisionsByRound = {} as Record<RoundNumber, StoredDecisionRow>;
 
       for (const item of teamDecisions) {
         const decisionRound = roundNumberById.get(item.round_id);
@@ -350,7 +349,7 @@ export async function finalizeRoundAction(formData: FormData) {
           );
         }
 
-        decisionsByRound[decisionRound] = decisionSet(item);
+        decisionsByRound[decisionRound] = storedDecision(item);
       }
 
       if (
@@ -366,35 +365,28 @@ export async function finalizeRoundAction(formData: FormData) {
         );
       }
 
-      const game = simulateGame(decisionsByRound);
-      const cumulativeUfcf =
-        game.rounds[1].financial.unleveredFreeCashFlow *
-          game.rounds[1].durationYears +
-        game.rounds[2].financial.unleveredFreeCashFlow *
-          game.rounds[2].durationYears +
-        game.rounds[3].financial.unleveredFreeCashFlow *
-          game.rounds[3].durationYears;
+      const game = simulateSessionGame(
+        session.model_version,
+        decisionsByRound,
+      );
 
       finalScorePayload.push({
         team_id: team.id,
         model_version: game.modelVersion,
-        full_game_result: game as unknown as Json,
-        final_game_value: game.valuation.finalGameValue,
-        enterprise_value: game.valuation.enterpriseValue,
-        implied_equity_value: game.valuation.impliedEquityValue,
-        risk_penalty: game.valuation.riskPenalty,
-        pv_explicit_ufcf: game.valuation.pvExplicitUfcf,
-        pv_terminal_value: game.valuation.pvTerminalValue,
-        cumulative_ufcf: cumulativeUfcf,
-        final_revenue: game.rounds[3].operating.totalRevenue,
-        final_ebitda_margin:
-          game.rounds[3].operating.adjustedEbitdaMargin,
-        final_premium_share:
-          game.rounds[3].operating.premiumRevenueShare,
-        final_net_debt: game.rounds[3].financial.netDebt,
-        competitive_position:
-          game.rounds[3].operating.competitivePosition,
-        strategic_health: game.rounds[3].operating.strategicHealth,
+        full_game_result: game.rawResult as Json,
+        final_game_value: game.finalGameValue,
+        enterprise_value: game.enterpriseValue,
+        implied_equity_value: game.impliedEquityValue,
+        risk_penalty: game.riskPenalty,
+        pv_explicit_ufcf: game.pvExplicitUfcf,
+        pv_terminal_value: game.pvTerminalValue,
+        cumulative_ufcf: game.cumulativeUfcf,
+        final_revenue: game.finalRevenue,
+        final_ebitda_margin: game.finalEbitdaMargin,
+        final_premium_share: game.finalPremiumShare,
+        final_net_debt: game.finalNetDebt,
+        competitive_position: game.competitivePosition,
+        strategic_health: game.strategicHealth,
       });
     }
 
