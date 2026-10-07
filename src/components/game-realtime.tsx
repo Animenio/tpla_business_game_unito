@@ -99,7 +99,8 @@ export function GameRealtime({
           filter: `id=eq.${sessionId}`,
         },
         (payload) => {
-          const status = String(payload.new.status ?? "");
+          const nextRow = payload.new as { status?: unknown };
+          const status = String(nextRow.status ?? "");
           if (!handleSessionStatus(status)) {
             refresh();
           }
