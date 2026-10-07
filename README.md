@@ -42,7 +42,8 @@ registrazione / login
 Docente:
 
 ```
-login staff
+registrazione con email pre-autorizzata
+→ riconoscimento automatico del ruolo
 → dashboard sessione
 → monitoraggio studenti e team
 → conferma gruppi
@@ -52,6 +53,16 @@ login staff
 → monitoraggio invii live
 → estensione timer
 → chiusura e calcolo server-side
+```
+
+Admin:
+
+```
+console docente
+→ Gestisci accessi
+→ whitelist email UniTo
+→ assegna teacher/admin
+→ revoca accessi staff
 ```
 
 Le schermate seguono il Figma **CFO AI Business Game — UI Design**.
@@ -108,6 +119,8 @@ npm run dev
 - La lobby usa Supabase Realtime per membership e stato sessione.
 - Il pannello docente usa RPC autorizzate e registra le transizioni in `session_events`.
 - Gli account staff non possono creare o unirsi ai team studenti.
+- I ruoli teacher/admin non sono selezionabili dal form pubblico: vengono assegnati solo tramite whitelist amministrata server-side.
+- Un admin può autorizzare un'email UniTo prima della registrazione oppure promuovere immediatamente un account esistente non associato a un team studente.
 - L'avvio della simulazione richiede tutti i team confermati e nessuno studente senza team.
 - Le decisioni sono modificabili soltanto dal proprio team durante la finestra aperta.
 - Dopo l'invio le decisioni diventano immutabili.
