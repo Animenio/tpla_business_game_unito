@@ -9,6 +9,11 @@ import {
   ROUND_CONTENT,
   roundNumber,
 } from "@/src/domain/game/round-content";
+import {
+  V05_DECISION_COUNT,
+  V05_ROUND_DECISION_FOCUS,
+} from "@/src/domain/game/round-content-v05";
+import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
 interface BriefingPageProps {
@@ -62,6 +67,8 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
   }
 
   const content = ROUND_CONTENT[round];
+  const isV05 = session.model_version === V05_MODEL_VERSION;
+  const v05Focus = isV05 ? V05_ROUND_DECISION_FOCUS[round] : null;
 
   return (
     <main className="application-page">
@@ -147,6 +154,20 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
           </aside>
         </div>
 
+        {v05Focus ? (
+          <section className="board-mandate">
+            <div>
+              <div className="card-eyebrow">FOCUS DECISIONALE</div>
+              <h2>{v05Focus.title}</h2>
+              <p>{v05Focus.body}</p>
+            </div>
+            <strong>
+              Non esiste una scelta dominante: valutate insieme valore, cassa,
+              rischio e capacità futura.
+            </strong>
+          </section>
+        ) : null}
+
         {round === 1 ? (
           <section className="competitor-reference-card">
             <div className="competitor-reference-heading">
@@ -179,11 +200,11 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
             <div className="card-eyebrow">DECISION WINDOW OPEN</div>
             <h2>
               Il vostro team ha {gameRound.decision_window_minutes} minuti per
-              definire le 9 decisioni del Round {round}.
+              definire le {isV05 ? V05_DECISION_COUNT : 9} decisioni del Round {round}.
             </h2>
             <p>
-              Definite le 9 decisioni, selezionate l’obiettivo principale del
-              round e inviate.
+              Definite le {isV05 ? V05_DECISION_COUNT : 9} decisioni, selezionate
+              l’obiettivo principale del round e inviate.
             </p>
           </div>
           <a
