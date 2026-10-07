@@ -96,7 +96,7 @@ export default async function BriefingPage({ params }: BriefingPageProps) {
           </div>
           <div className="round-clock-card">
             <span>TEMPO</span>
-            <RoundTimer closesAt={gameRound.closes_at} />
+            <RoundTimer closesAt={gameRound.closes_at} roundId={gameRound.id} />
           </div>
         </section>
 
