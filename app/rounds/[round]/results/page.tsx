@@ -256,7 +256,21 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
           </section>
         </div>
 
-        {nextRound ? (
+        {round === 3 && session.status === "completed" ? (
+          <section className="next-round-card final-result-entry">
+            <div>
+              <div className="card-eyebrow">SIMULAZIONE COMPLETATA</div>
+              <h2>Il risultato finale del team è disponibile.</h2>
+              <p>
+                Consulta valore creato, KPI 2030, storico dei round e benchmark
+                rispetto alla classe.
+              </p>
+            </div>
+            <a className="button-primary next-round-button" href="/final">
+              Apri il report finale
+            </a>
+          </section>
+        ) : nextRound ? (
           <section className="next-round-card">
             <div>
               <div className="card-eyebrow">NEXT</div>
