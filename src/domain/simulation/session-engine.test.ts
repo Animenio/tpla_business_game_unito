@@ -16,6 +16,7 @@ import {
   DEFAULT_DECISIONS,
   MODEL_VERSION as V05_MODEL_VERSION,
 } from "./v05/spec";
+import { MODEL_VERSION as V053_RC_MODEL_VERSION } from "./v053/spec";
 import {
   decisionFromStoredRow,
   decisionToStoredRow,
@@ -109,6 +110,9 @@ describe("session engine integration", () => {
     expect(usesV05(V04_MODEL_VERSION)).toBe(false);
     expect(() => usesV05("aurora-tyres-v0.5.3")).toThrow(
       "UNSUPPORTED_MODEL_VERSION:aurora-tyres-v0.5.3",
+    );
+    expect(() => usesV05(V053_RC_MODEL_VERSION)).toThrow(
+      `UNSUPPORTED_MODEL_VERSION:${V053_RC_MODEL_VERSION}`,
     );
   });
 });

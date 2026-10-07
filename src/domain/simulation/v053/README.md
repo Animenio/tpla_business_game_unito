@@ -5,13 +5,13 @@ This directory contains the isolated **v0.5.3 release candidate** selected after
 ## Status
 
 - Model identifier: `aurora-tyres-v0.5.3-rc.1`
-- Status: calibration RC, not production
+- Status: **final validation PASSED**, awaiting explicit classroom activation
 - Application routing: **not enabled**
 - Database default: **unchanged**
 - Current production/reference model: **v0.5.2**
 - v0.4 and v0.5.2 remain frozen and untouched
 
-The purpose of this RC is to validate game balance before any decision is made about adopting it in classroom sessions.
+The RC has passed the final numerical, accounting, regression and compatibility gate. It remains deliberately isolated from live session routing until a separate promotion change is approved.
 
 ## Why v0.5.3 exists
 
@@ -76,7 +76,7 @@ The complete annual default anchors and the 12-case regression suite are frozen 
 ## Rules for this directory
 
 1. Do not back-port RC calibration changes into `v05/`.
-2. Do not route live sessions to RC1 until a separate integration decision is approved.
+2. Do not route live sessions to RC1 until the separate classroom-promotion change is approved.
 3. Any further economic calibration must change the model identifier.
 4. Regression anchors must be updated only when the economics intentionally change and a new balance audit has been run.
 5. Heavy Monte Carlo / optimization audits should remain on research branches; the production test suite keeps only deterministic regression anchors.
