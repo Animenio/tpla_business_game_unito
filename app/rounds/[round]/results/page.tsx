@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { GameRealtime } from "@/src/components/game-realtime";
-import { BASELINE_2025 } from "@/src/domain/simulation/v04/spec";
+import { BASELINE_2025 as BASELINE_V04 } from "@/src/domain/simulation/v04/spec";
+import {
+  BASELINE_2025 as BASELINE_V05,
+  MODEL_VERSION as V05_MODEL_VERSION,
+} from "@/src/domain/simulation/v05/spec";
 import { roundNumber } from "@/src/domain/game/round-content";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
@@ -110,23 +114,41 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
     );
   }
 
+  const isV05 = session.model_version === V05_MODEL_VERSION;
+  const baseline = isV05
+    ? {
+        revenue: BASELINE_V05.revenue,
+        adjustedEbitda: BASELINE_V05.adjusted_ebitda,
+        adjustedEbitdaMargin:
+          BASELINE_V05.adjusted_ebitda / BASELINE_V05.revenue,
+        netDebt: BASELINE_V05.net_debt,
+        premiumShare: BASELINE_V05.premium_share,
+      }
+    : {
+        revenue: BASELINE_V04.revenue,
+        adjustedEbitda: BASELINE_V04.adjusted_ebitda,
+        adjustedEbitdaMargin: BASELINE_V04.adjusted_ebitda_margin,
+        netDebt: BASELINE_V04.net_debt,
+        premiumShare: BASELINE_V04.premium_share,
+      };
+
   const revenueDelta =
-    result.total_revenue / BASELINE_2025.revenue - 1;
+    result.total_revenue / baseline.revenue - 1;
   const ebitdaDelta =
-    result.adjusted_ebitda_margin - BASELINE_2025.adjusted_ebitda_margin;
-  const netDebtDelta = result.net_debt - BASELINE_2025.net_debt;
+    result.adjusted_ebitda_margin - baseline.adjustedEbitdaMargin;
+  const netDebtDelta = result.net_debt - baseline.netDebt;
   const premiumDelta =
-    result.premium_revenue_share - BASELINE_2025.premium_share;
+    result.premium_revenue_share - baseline.premiumShare;
 
   const revenueIndex =
-    (result.total_revenue / BASELINE_2025.revenue) * 100;
+    (result.total_revenue / baseline.revenue) * 100;
   const ebitdaAmount =
     result.total_revenue * result.adjusted_ebitda_margin;
   const ebitdaIndex =
-    (ebitdaAmount / BASELINE_2025.adjusted_ebitda) * 100;
+    (ebitdaAmount / baseline.adjustedEbitda) * 100;
   const strategicIndex = result.strategic_health * 100;
   const premiumIndex =
-    (result.premium_revenue_share / BASELINE_2025.premium_share) * 100;
+    (result.premium_revenue_share / baseline.premiumShare) * 100;
 
   const { data: nextRound } =
     round < 3
@@ -234,15 +256,17 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
               <div>
                 <dt>CASSA</dt>
                 <dd>
-                  CapEx, scorte e tempi di incasso hanno modificato
-                  l’assorbimento di cassa.
+                  {isV05
+                    ? "CapEx e scorte hanno modificato l’assorbimento di cassa."
+                    : "CapEx, scorte e tempi di incasso hanno modificato l’assorbimento di cassa."}
                 </dd>
               </div>
               <div>
                 <dt>RISCHIO</dt>
                 <dd>
-                  Le scelte di copertura hanno modificato l’esposizione alla
-                  volatilità delle materie prime.
+                  {isV05
+                    ? "La politica di resilienza ha modificato scorte, copertura e rischio di continuità della supply chain."
+                    : "Le scelte di copertura hanno modificato l’esposizione alla volatilità delle materie prime."}
                 </dd>
               </div>
               <div>
