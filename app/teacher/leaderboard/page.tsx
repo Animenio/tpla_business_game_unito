@@ -5,6 +5,7 @@ import {
 } from "@/app/teacher/leaderboard/actions";
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
+import { RestartSimulationControl } from "@/src/components/restart-simulation-control";
 import { requireTeacherGameContext } from "@/src/lib/game/context";
 
 interface TeacherLeaderboardProps {
@@ -162,6 +163,21 @@ export default async function TeacherLeaderboardPage({
               );
             })}
           </div>
+        </section>
+
+        <section className="teacher-restart-card leaderboard-restart-card">
+          <div>
+            <div className="card-eyebrow">RIAVVIO SIMULAZIONE</div>
+            <h2>Riparti con la stessa classe</h2>
+            <p>
+              Azzera la run completata e riporta tutti i team alla lobby
+              pre-avvio, mantenendo studenti, team e materiali.
+            </p>
+          </div>
+          <RestartSimulationControl
+            sessionCode={session.code}
+            sessionId={session.id}
+          />
         </section>
 
         <div className="leaderboard-bottom-grid">
