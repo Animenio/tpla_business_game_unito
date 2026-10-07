@@ -177,7 +177,7 @@ export default async function DecisionsPage({
           <div>
             <h1>Decisioni {gameRound.period_label}</h1>
             <p>
-              {isV05
+              {isReducedModel
                 ? "Compilate le 6 decisioni economiche. R&S include l’orientamento e la resilienza unifica scorte e copertura; dopo l’invio non potrete più modificarle."
                 : "Compilate le 9 voci. Nessun valore è preimpostato; dopo l’invio non potrete più modificarle."}
             </p>
