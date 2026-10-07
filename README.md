@@ -232,3 +232,13 @@ Usare:
 ```
 
 La pagina `/auth/recovery` non verifica automaticamente il token: mostra un pulsante che richiede un'azione esplicita dell'utente.
+
+
+### Recovery compatibility
+
+The recovery landing page accepts both Supabase recovery mechanisms:
+
+- the default SSR/PKCE redirect with a `code` query parameter;
+- the optional custom email template using `token_hash` and `type=recovery`.
+
+The PKCE code is exchanged only after the user explicitly presses the confirmation button, so a redirect reaching the landing page does not immediately finalize the recovery session.
