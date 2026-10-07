@@ -8,7 +8,7 @@ import {
   roundNumber,
 } from "@/src/domain/game/round-content";
 import { V05_DECISION_COUNT } from "@/src/domain/game/round-content-v05";
-import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
+import { isReducedDecisionModelVersion } from "@/src/domain/simulation/model-version";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
 interface SubmittedPageProps {
@@ -53,8 +53,8 @@ export default async function SubmittedPage({ params }: SubmittedPageProps) {
     redirect(`/rounds/${round}/review`);
   }
 
-  const isV05 = session.model_version === V05_MODEL_VERSION;
-  const decisionCount = isV05 ? V05_DECISION_COUNT : 9;
+  const isReducedModel = isReducedDecisionModelVersion(session.model_version);
+  const decisionCount = isReducedModel ? V05_DECISION_COUNT : 9;
 
   if (gameRound.status === "closed") {
     const { data: result } = await supabase
