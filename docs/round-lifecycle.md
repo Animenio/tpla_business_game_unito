@@ -38,9 +38,9 @@ A submitted decision is immutable.
 → /rounds/[round]/results
 ```
 
-The decision form contains the nine World Model controls. Percentages are displayed in human units and converted to decimal ratios at the server-action boundary.
+The decision form is model-version aware. Aurora Tyres v0.5.2 exposes six economic decisions: Premium price positioning, Standard price positioning, marketing, R&D with an orientation choice, CapEx, and a resilience policy. The v0.4 legacy flow retains its original nine controls. Percentages are displayed in human units and converted to decimal ratios at the server-action boundary.
 
-Strict student validation uses the UI bounds and steps from Aurora Tyres v0.4. The economic engine keeps its separate bounds-only validation so the workbook's 4.6% Round-1 Balanced R&D reference remains reproducible.
+Server-side validation and simulation are routed from the session's persisted `model_version`. The v0.5.2 storage adapter maps the reduced categorical choices onto the existing decision columns so the database can support both versions without rewriting historical v0.4 sessions.
 
 ## Teacher flow
 
@@ -67,12 +67,12 @@ On close, the teacher Server Action:
 
 1. loads submitted decision sets;
 2. loads each team's previous closing state for rounds 2 and 3;
-3. calls `simulateRound()` server-side;
+3. routes to the correct versioned engine and calls the corresponding round simulation server-side;
 4. sends only the calculated payload to the authenticated finalization RPC;
 5. the RPC validates staff authorization, round state, team uniqueness and model version;
 6. results are persisted and the round is closed in the same database transaction.
 
-For Round 1 the opening state comes from `createOpeningState()`. For later rounds the opening state is the previous persisted `closingState`.
+For Round 1 the opening state comes from the versioned opening-state factory. For later rounds the opening state is the previous persisted `closingState`. Unknown model versions are rejected explicitly.
 
 ## Time semantics
 
