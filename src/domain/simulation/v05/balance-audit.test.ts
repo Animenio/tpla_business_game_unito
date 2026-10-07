@@ -772,16 +772,36 @@ describe("v0.5.2 quantitative game-balance audit", () => {
       console.log("BALANCE_OAT_CATEGORIES=" + JSON.stringify(report.oneAtATimeCategories));
       console.log("BALANCE_ROUND_DISPERSION=" + JSON.stringify(report.roundOnlyDispersion));
       console.log(
-        "BALANCE_COORDINATE_SUMMARY=" +
+        "BALANCE_COORD_META=" +
           JSON.stringify({
             starts: report.coordinateAscent.starts,
             uniqueOptima: report.coordinateAscent.uniqueOptima,
-            best: report.coordinateAscent.best,
-            worstLocalOptimum: report.coordinateAscent.worstLocalOptimum,
             localOptimumFgv: report.coordinateAscent.localOptimumFgv,
-            numericBoundaryShares: report.coordinateAscent.numericBoundaryShares,
-            categoricalShares: report.coordinateAscent.categoricalShares,
           }),
+      );
+      console.log(
+        "BALANCE_COORD_BEST=" +
+          JSON.stringify(report.coordinateAscent.best),
+      );
+      console.log(
+        "BALANCE_COORD_WORST=" +
+          JSON.stringify(report.coordinateAscent.worstLocalOptimum),
+      );
+      for (const round of [1, 2, 3] as const) {
+        console.log(
+          `BALANCE_COORD_BOUNDARY_R${round}=` +
+            JSON.stringify(
+              Object.fromEntries(
+                Object.entries(
+                  report.coordinateAscent.numericBoundaryShares,
+                ).filter(([key]) => key.startsWith(`r${round}.`)),
+              ),
+            ),
+        );
+      }
+      console.log(
+        "BALANCE_COORD_CATEGORIES=" +
+          JSON.stringify(report.coordinateAscent.categoricalShares),
       );
     },
     60_000,
