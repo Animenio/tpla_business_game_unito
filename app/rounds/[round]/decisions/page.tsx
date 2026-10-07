@@ -5,11 +5,11 @@ import { AppHeader } from "@/src/components/app-header";
 import { GameRealtime } from "@/src/components/game-realtime";
 import { RoundTimer } from "@/src/components/round-timer";
 import {
+  DECISION_BASELINE_CONTEXT,
   DECISION_GROUPS,
   DECISION_HELP,
   ROUND_CONTENT,
   ROUND_OBJECTIVES,
-  ROUND_ONE_FIGMA_DEFAULTS,
   decisionDefinition,
   roundNumber,
 } from "@/src/domain/game/round-content";
@@ -35,7 +35,11 @@ function param(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function toInputValue(key: keyof DecisionSet, value: number) {
+function toInputValue(
+  key: keyof DecisionSet,
+  value: number | undefined,
+): number | undefined {
+  if (value === undefined) return undefined;
   return PERCENT_KEYS.has(key) ? value * 100 : value;
 }
 
@@ -55,33 +59,34 @@ function inputStep(key: keyof DecisionSet) {
 }
 
 function rangeLabel(key: keyof DecisionSet) {
-  const definition = decisionDefinition(key);
   const min = inputMin(key);
   const max = inputMax(key);
 
   if (key === "inventory_days" || key === "receivable_days") {
-    return `Intervallo: ${min} → ${max} giorni`;
+    return "Intervallo: " + min + " → " + max + " giorni";
   }
 
   if (key === "rnd_pct" || key === "capex_pct") {
-    return `Intervallo: ${min}% → ${max}% dei ricavi`;
+    return "Intervallo: " + min + "% → " + max + "% dei ricavi";
   }
 
   if (key === "connected_rnd_allocation") {
-    return `Intervallo: ${min}% → ${max}% della R&S`;
+    return "Intervallo: " + min + "% → " + max + "% della R&S";
   }
 
   if (key === "natural_rubber_hedge") {
-    return `Intervallo: ${min}% → ${max}%`;
+    return "Intervallo: " + min + "% → " + max + "%";
   }
 
-  const signed = (value: number) => (value > 0 ? `+${value}%` : `${value}%`);
-  return `Intervallo: ${signed(min)} → ${signed(max)}`;
+  const signed = (value: number) => (value > 0 ? "+" + value + "%" : value + "%");
+  return "Intervallo: " + signed(min) + " → " + signed(max);
 }
 
-function decisionValues(row: Record<string, unknown> | null): DecisionSet {
+function decisionValues(
+  row: Record<string, unknown> | null,
+): Partial<DecisionSet> {
   if (!row) {
-    return ROUND_ONE_FIGMA_DEFAULTS;
+    return {};
   }
 
   return {
@@ -130,7 +135,7 @@ export default async function DecisionsPage({
   }
 
   if (gameRound.status === "closed") {
-    redirect(`/rounds/${round}/results`);
+    redirect("/rounds/" + round + "/results");
   }
 
   const { data: draft } = await supabase
@@ -141,33 +146,10 @@ export default async function DecisionsPage({
     .maybeSingle();
 
   if (draft?.status === "submitted") {
-    redirect(`/rounds/${round}/submitted`);
+    redirect("/rounds/" + round + "/submitted");
   }
 
-  let inherited: Record<string, unknown> | null = null;
-
-  if (!draft && round > 1) {
-    const { data: previousRound } = await supabase
-      .from("game_rounds")
-      .select("id")
-      .eq("session_id", session.id)
-      .eq("round_number", round - 1)
-      .maybeSingle();
-
-    if (previousRound) {
-      const { data: previousDecision } = await supabase
-        .from("team_round_decisions")
-        .select("*")
-        .eq("round_id", previousRound.id)
-        .eq("team_id", team.id)
-        .eq("status", "submitted")
-        .maybeSingle();
-
-      inherited = previousDecision;
-    }
-  }
-
-  const values = decisionValues(draft ?? inherited);
+  const values = decisionValues(draft);
   const selectedObjective = draft?.objective ?? null;
   const search = await searchParams;
   const error = param(search.error);
@@ -182,7 +164,7 @@ export default async function DecisionsPage({
       />
       <AppHeader
         section="Decisioni"
-        sessionCode={`${gameRound.period_label} · LIVE`}
+        sessionCode={gameRound.period_label + " · LIVE"}
         userName={team.name}
       />
 
@@ -191,7 +173,8 @@ export default async function DecisionsPage({
           <div>
             <h1>Decisioni {gameRound.period_label}</h1>
             <p>
-              Modificate le 9 voci. Dopo l’invio non potrete più cambiarle.
+              Compilate le 9 voci. Nessun valore è preimpostato; dopo l’invio
+              non potrete più modificarle.
             </p>
           </div>
           <div className="status-badge amber">
@@ -213,9 +196,17 @@ export default async function DecisionsPage({
               completo sarà richiesto al termine della simulazione.
             </span>
           </div>
-          <div className="scenario-time">
-            <span>Tempo rimasto</span>
-            <RoundTimer closesAt={gameRound.closes_at} compact />
+          <div className="scenario-actions">
+            <a
+              className="button-secondary scenario-briefing-link"
+              href={"/rounds/" + round + "/briefing"}
+            >
+              ← Rivedi briefing
+            </a>
+            <div className="scenario-time">
+              <span>Tempo rimasto</span>
+              <RoundTimer closesAt={gameRound.closes_at} compact />
+            </div>
           </div>
         </section>
 
@@ -236,12 +227,15 @@ export default async function DecisionsPage({
                       <article className="decision-card" key={key}>
                         <div className="decision-card-top">
                           <label htmlFor={key}>{definition.label}</label>
-                          <span
-                            className="decision-info"
-                            title={DECISION_HELP[key]}
-                          >
-                            ⓘ Info
-                          </span>
+                          <details className="decision-info">
+                            <summary>ⓘ Info</summary>
+                            <div className="decision-info-panel">
+                              <strong>Cosa significa</strong>
+                              <p>{DECISION_HELP[key]}</p>
+                              <strong>Riferimento 2025</strong>
+                              <p>{DECISION_BASELINE_CONTEXT[key]}</p>
+                            </div>
+                          </details>
                           <div className="decision-value-input">
                             <input
                               defaultValue={current}
@@ -249,6 +243,7 @@ export default async function DecisionsPage({
                               max={inputMax(key)}
                               min={inputMin(key)}
                               name={key}
+                              placeholder="Valore"
                               required
                               step={inputStep(key)}
                               type="number"
@@ -257,8 +252,6 @@ export default async function DecisionsPage({
                           </div>
                         </div>
                         <div className="decision-range">{rangeLabel(key)}</div>
-                        <div className="card-rule" />
-                        <p>{DECISION_HELP[key]}</p>
                       </article>
                     );
                   })}
