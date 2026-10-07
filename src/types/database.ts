@@ -76,6 +76,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_test: boolean
           model_version: string
           registration_locked_at: string | null
           started_at: string | null
@@ -91,6 +92,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_test?: boolean
           model_version?: string
           registration_locked_at?: string | null
           started_at?: string | null
@@ -106,6 +108,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_test?: boolean
           model_version?: string
           registration_locked_at?: string | null
           started_at?: string | null
@@ -743,6 +746,7 @@ export type Database = {
         Args: {
           p_academic_year: string
           p_code: string
+          p_is_test: boolean
           p_model_version: string
           p_title: string
         }
