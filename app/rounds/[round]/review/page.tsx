@@ -176,7 +176,7 @@ export default async function ReviewPage({
               <span className="status-dot" />
               Non ancora inviato
             </div>
-            <RoundTimer closesAt={gameRound.closes_at} roundId={gameRound.id} compact />
+            <RoundTimer closesAt={gameRound.closes_at} compact />
           </div>
         </section>
 
