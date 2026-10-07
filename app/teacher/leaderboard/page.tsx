@@ -85,9 +85,14 @@ export default async function TeacherLeaderboardPage({
           </div>
           <div className="leaderboard-heading-actions">
             {membership.role === "admin" ? (
-              <a className="button-secondary" href="/admin/teachers">
-                Gestisci accessi
-              </a>
+              <>
+                <a className="button-secondary" href="/admin/sessions">
+                  Sessioni
+                </a>
+                <a className="button-secondary" href="/admin/teachers">
+                  Gestisci accessi
+                </a>
+              </>
             ) : null}
             <div className="status-badge green">
               <span className="status-dot" />

@@ -5,6 +5,7 @@ interface HomeProps {
   searchParams: Promise<{
     mode?: string | string[];
     error?: string | string[];
+    message?: string | string[];
   }>;
 }
 
@@ -16,6 +17,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const mode = param(params.mode) === "login" ? "login" : "register";
   const error = param(params.error);
+  const message = param(params.message);
 
   return (
     <main className="auth-page">
@@ -60,6 +62,11 @@ export default async function Home({ searchParams }: HomeProps) {
           </nav>
 
           {error ? <div className="form-error">{error}</div> : null}
+          {message === "password-updated" ? (
+            <div className="auth-success">
+              Password aggiornata. Puoi accedere con le nuove credenziali.
+            </div>
+          ) : null}
 
           {mode === "register" ? (
             <form action={registerAction} className="auth-form">
@@ -147,6 +154,9 @@ export default async function Home({ searchParams }: HomeProps) {
               <button className="button-primary" type="submit">
                 Accedi
               </button>
+              <Link className="forgot-password-link" href="/forgot-password">
+                Password dimenticata?
+              </Link>
             </form>
           )}
         </section>

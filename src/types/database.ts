@@ -727,12 +727,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_archive_session: {
+        Args: { p_session_id: string }
+        Returns: Database["public"]["Enums"]["session_status"]
+      }
       admin_authorize_staff: {
         Args: {
           p_email: string
           p_role: Database["public"]["Enums"]["app_role"]
           p_session_id: string
         }
+        Returns: string
+      }
+      admin_create_session: {
+        Args: {
+          p_academic_year: string
+          p_code: string
+          p_model_version: string
+          p_title: string
+        }
+        Returns: string
+      }
+      admin_duplicate_session: {
+        Args: { p_code: string; p_source_session_id: string; p_title: string }
         Returns: string
       }
       admin_revoke_staff: {
@@ -816,7 +833,6 @@ export type Database = {
         Args: { p_code: string; p_email: string }
         Returns: boolean
       }
-      validate_session_code: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
       ai_submission_status: "submitted" | "verified"

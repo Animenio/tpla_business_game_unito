@@ -3,7 +3,7 @@ import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { TeacherRealtime } from "@/src/components/teacher-realtime";
 import { TeacherRoundControls } from "@/src/components/teacher-round-controls";
-import { createClient } from "@/src/lib/supabase/server";
+import { requireTeacherGameContext } from "@/src/lib/game/context";
 import {
   setSessionStatusAction,
   setTeamStatusAction,
@@ -59,51 +59,20 @@ function teamStatusLabel(status: string) {
 }
 
 export default async function TeacherPage({ searchParams }: TeacherPageProps) {
-  const supabase = await createClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/?mode=login");
-  }
-
-  const { data: staffMembership } = await supabase
-    .from("session_members")
-    .select("session_id, role, joined_at")
-    .eq("user_id", user.id)
-    .in("role", ["teacher", "admin"])
-    .order("joined_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!staffMembership) {
-    redirect("/team");
-  }
-
-  const { data: session } = await supabase
-    .from("game_sessions")
-    .select(
-      "id, code, title, academic_year, status, model_version, registration_locked_at, started_at",
-    )
-    .eq("id", staffMembership.session_id)
-    .single();
-
-  if (!session) {
-    redirect("/team");
-  }
+    supabase,
+    user,
+    profile,
+    membership: staffMembership,
+    session,
+  } = await requireTeacherGameContext();
 
   if (session.status === "completed") {
     redirect("/teacher/leaderboard");
   }
 
-  const [{ data: profile }, { data: counts }, { data: teams }, { data: students }] =
+  const [{ data: counts }, { data: teams }, { data: students }] =
     await Promise.all([
-      supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle(),
       supabase.rpc("teacher_session_counts", {
         p_session_id: session.id,
       }),
@@ -228,15 +197,21 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           <section className="admin-access-banner">
             <div>
               <div className="card-eyebrow">AMMINISTRAZIONE</div>
-              <strong>Gestisci docenti e amministratori della sessione</strong>
+              <strong>Gestisci sessioni, test e accessi staff</strong>
               <span>
-                Autorizza email UniTo, assegna i ruoli e revoca gli accessi
-                senza intervenire manualmente su Supabase.
+                Crea codici indipendenti per ogni test o classe, cambia
+                sessione attiva e autorizza docenti senza intervenire
+                manualmente su Supabase.
               </span>
             </div>
-            <a className="button-secondary" href="/admin/teachers">
-              Gestisci accessi
-            </a>
+            <div className="admin-banner-actions">
+              <a className="button-secondary" href="/admin/sessions">
+                Gestisci sessioni
+              </a>
+              <a className="button-secondary" href="/admin/teachers">
+                Gestisci accessi
+              </a>
+            </div>
           </section>
         ) : null}
 

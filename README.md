@@ -170,3 +170,44 @@ Ogni sessione contiene tre record in `game_rounds`:
 Il docente apre un round con una finestra temporale; gli studenti salvano una bozza validata sulle regole UI del World Model e la inviano tramite RPC. La chiusura del docente calcola Aurora Tyres v0.4 server-side e salva per ogni team sia il payload completo sia i KPI principali.
 
 La chiusura anticipata è consentita solo quando tutti i team attivi hanno inviato. Dopo la scadenza il docente può chiudere il round anche se alcuni team non hanno inviato; per quei team non viene generato un risultato.
+
+
+## Session management
+
+Admins can manage independent game runs from `/admin/sessions`.
+
+Each session code represents an isolated execution of the Business Game. Creating or duplicating a session does not copy students, teams, decisions, timers, results, rankings or AI evidence.
+
+Supported admin operations:
+
+- create a fresh session with a new code;
+- switch the active staff session;
+- duplicate configuration into a clean session;
+- archive an old or abandoned session while preserving its data.
+
+The selected staff session is stored in a secure HTTP-only cookie and validated against the user's staff membership before use.
+
+## Password recovery
+
+The login page exposes **Password dimenticata?**.
+
+Recovery flow:
+
+```
+forgot-password
+→ Supabase recovery email
+→ /auth/callback
+→ PKCE code exchange
+→ /auth/reset-password
+→ new password
+→ forced login
+```
+
+The canonical application URL is supplied through `NEXT_PUBLIC_SITE_URL`.
+
+For hosted Supabase, the canonical production URL and callback URL must be allowed in **Authentication → URL Configuration**:
+
+```
+https://cfo-ai-business-game-unito.vercel.app
+https://cfo-ai-business-game-unito.vercel.app/auth/callback
+```
