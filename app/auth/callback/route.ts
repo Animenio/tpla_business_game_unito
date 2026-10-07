@@ -5,21 +5,13 @@ import { PENDING_GOOGLE_SESSION_COOKIE } from "@/src/lib/auth/google";
 import { SELECTED_SESSION_COOKIE } from "@/src/lib/game/context";
 import { createClient } from "@/src/lib/supabase/server";
 
-function universityEmail(email: string | null | undefined) {
-  const normalized = (email ?? "").toLowerCase();
-  return (
-    normalized.endsWith("@edu.unito.it") ||
-    normalized.endsWith("@unito.it")
-  );
-}
-
 function oauthError(message: string) {
   return "/?mode=login&error=" + encodeURIComponent(message);
 }
 
 function joinError(message: string) {
   if (message.includes("UNSUPPORTED_EMAIL_DOMAIN")) {
-    return "Usa l’account Google istituzionale UniTo (@edu.unito.it o @unito.it).";
+    return "Questa è una sessione di classe reale: usa l’account Google istituzionale UniTo (@edu.unito.it o @unito.it).";
   }
   if (message.includes("SESSION_NOT_FOUND")) {
     return "Codice sessione non valido.";
@@ -37,7 +29,7 @@ function joinError(message: string) {
     message.includes("GOOGLE_PROVIDER_REQUIRED") ||
     message.includes("VERIFIED_EMAIL_REQUIRED")
   ) {
-    return "Non è stato possibile verificare l’identità Google UniTo.";
+    return "Non è stato possibile verificare l’identità Google.";
   }
   return "Impossibile associare l’account Google alla sessione.";
 }
@@ -62,13 +54,9 @@ export async function GET(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || !universityEmail(user.email)) {
+  if (!user) {
     await supabase.auth.signOut();
-    redirect(
-      oauthError(
-        "Usa l’account Google istituzionale UniTo (@edu.unito.it o @unito.it).",
-      ),
-    );
+    redirect(oauthError("Non è stato possibile leggere l’account Google."));
   }
 
   const cookieStore = await cookies();
@@ -121,7 +109,7 @@ export async function GET(request: NextRequest) {
     redirect(
       "/?mode=register&error=" +
         encodeURIComponent(
-          "Account Google UniTo verificato. Inserisci il codice sessione nella scheda Registrati per partecipare.",
+          "Account Google verificato. Inserisci il codice sessione nella scheda Registrati per partecipare.",
         ),
     );
   }
