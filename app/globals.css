@@ -3944,3 +3944,196 @@ button {
   font-size: 10px;
   line-height: 16px;
 }
+
+
+/* Round briefing: competitive context */
+.competitor-reference-card {
+  margin-top: 20px;
+  padding: 22px 24px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 14px;
+  background: var(--cfo-surface-white);
+}
+
+.competitor-reference-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.competitor-reference-heading h2 {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.competitor-reference-heading > span {
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.competitor-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.competitor-reference-grid > div {
+  min-height: 82px;
+  padding: 13px 14px;
+  border-radius: 10px;
+  background: var(--cfo-surface-subtle);
+}
+
+.competitor-reference-grid span,
+.competitor-reference-grid strong {
+  display: block;
+}
+
+.competitor-reference-grid span {
+  color: var(--cfo-text-secondary);
+  font-size: 9px;
+  line-height: 14px;
+}
+
+.competitor-reference-grid strong {
+  margin-top: 9px;
+  font-size: 18px;
+}
+
+.competitor-reference-card > p {
+  margin: 14px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+/* Decision page: navigation + real info controls */
+.scenario-actions {
+  min-width: 190px;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.scenario-briefing-link {
+  min-height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+.decision-card {
+  min-height: 104px;
+}
+
+.decision-info {
+  position: relative;
+  margin-top: -2px;
+  z-index: 3;
+}
+
+.decision-info > summary {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--cfo-status-blue-bg);
+  color: var(--cfo-status-blue);
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.decision-info > summary::-webkit-details-marker {
+  display: none;
+}
+
+.decision-info[open] > summary {
+  box-shadow: 0 0 0 2px rgba(49, 93, 138, 0.12);
+}
+
+.decision-info-panel {
+  position: absolute;
+  top: 30px;
+  right: -104px;
+  width: 290px;
+  padding: 13px 14px;
+  border: 1px solid #c9d8e7;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  color: var(--cfo-text-primary);
+}
+
+.decision-info-panel strong {
+  display: block;
+  color: var(--cfo-status-blue);
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+
+.decision-info-panel strong + p {
+  margin-top: 5px;
+}
+
+.decision-info-panel p {
+  margin: 0 0 11px;
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.decision-info-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.decision-value-input input::placeholder {
+  color: #a8a8a8;
+  font-style: italic;
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .competitor-reference-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scenario-strip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .scenario-actions {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .scenario-time {
+    text-align: left;
+  }
+
+  .decision-info-panel {
+    left: -80px;
+    right: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .competitor-reference-heading {
+    flex-direction: column;
+  }
+
+  .competitor-reference-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .decision-info-panel {
+    left: -145px;
+    width: 260px;
+  }
+}
