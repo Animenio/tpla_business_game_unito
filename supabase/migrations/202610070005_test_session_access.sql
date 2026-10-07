@@ -1,0 +1,438 @@
+alter table public.game_sessions
+  add column if not exists is_test boolean not null default false;
+
+update public.game_sessions
+set is_test = true
+where code = 'TEST-EUG-01';
+
+drop function if exists public.admin_create_session(text, text, text, text);
+
+create or replace function public.admin_create_session(
+  p_code text,
+  p_title text,
+  p_academic_year text,
+  p_model_version text,
+  p_is_test boolean
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_code text;
+  v_title text;
+  v_academic_year text;
+  v_model_version text;
+  v_session_id uuid;
+  v_email text;
+begin
+  if auth.uid() is null then
+    raise exception 'AUTH_REQUIRED';
+  end if;
+
+  if not private.can_create_sessions() then
+    raise exception 'ADMIN_REQUIRED';
+  end if;
+
+  v_code := upper(trim(p_code));
+  v_title := trim(p_title);
+  v_academic_year := nullif(trim(p_academic_year), '');
+  v_model_version := coalesce(nullif(trim(p_model_version), ''), 'aurora-tyres-v0.4');
+
+  if not private.validate_session_code_format(v_code) then
+    raise exception 'INVALID_SESSION_CODE';
+  end if;
+
+  if char_length(v_title) < 3 or char_length(v_title) > 120 then
+    raise exception 'INVALID_SESSION_TITLE';
+  end if;
+
+  if exists (
+    select 1
+    from public.game_sessions gs
+    where gs.code = v_code
+  ) then
+    raise exception 'SESSION_CODE_EXISTS';
+  end if;
+
+  select lower(p.email)
+    into v_email
+  from public.profiles p
+  where p.id = auth.uid();
+
+  insert into public.game_sessions (
+    code,
+    title,
+    academic_year,
+    status,
+    model_version,
+    created_by,
+    is_test
+  )
+  values (
+    v_code,
+    v_title,
+    v_academic_year,
+    'registration_open',
+    v_model_version,
+    auth.uid(),
+    coalesce(p_is_test, false)
+  )
+  returning id into v_session_id;
+
+  insert into public.session_members (session_id, user_id, role)
+  values (v_session_id, auth.uid(), 'admin');
+
+  insert into public.staff_authorizations (
+    session_id,
+    email,
+    role,
+    authorized_by,
+    claimed_by,
+    claimed_at
+  )
+  values (
+    v_session_id,
+    v_email,
+    'admin',
+    auth.uid(),
+    auth.uid(),
+    now()
+  );
+
+  insert into public.session_events (
+    session_id,
+    actor_user_id,
+    event_type,
+    payload
+  )
+  values (
+    v_session_id,
+    auth.uid(),
+    'session_created',
+    jsonb_build_object(
+      'code', v_code,
+      'model_version', v_model_version,
+      'is_test', coalesce(p_is_test, false)
+    )
+  );
+
+  return v_session_id;
+end;
+$$;
+
+revoke all on function public.admin_create_session(text, text, text, text, boolean)
+  from public, anon;
+grant execute on function public.admin_create_session(text, text, text, text, boolean)
+  to authenticated;
+
+create or replace function public.admin_duplicate_session(
+  p_source_session_id uuid,
+  p_code text,
+  p_title text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_source public.game_sessions%rowtype;
+  v_new_session_id uuid;
+  v_code text;
+  v_title text;
+  v_email text;
+begin
+  if auth.uid() is null then
+    raise exception 'AUTH_REQUIRED';
+  end if;
+
+  if not private.is_session_admin(p_source_session_id) then
+    raise exception 'ADMIN_REQUIRED';
+  end if;
+
+  select *
+    into v_source
+  from public.game_sessions
+  where id = p_source_session_id;
+
+  if v_source.id is null then
+    raise exception 'SESSION_NOT_FOUND';
+  end if;
+
+  v_code := upper(trim(p_code));
+  v_title := coalesce(nullif(trim(p_title), ''), v_source.title);
+
+  if not private.validate_session_code_format(v_code) then
+    raise exception 'INVALID_SESSION_CODE';
+  end if;
+
+  if char_length(v_title) < 3 or char_length(v_title) > 120 then
+    raise exception 'INVALID_SESSION_TITLE';
+  end if;
+
+  if exists (
+    select 1
+    from public.game_sessions gs
+    where gs.code = v_code
+  ) then
+    raise exception 'SESSION_CODE_EXISTS';
+  end if;
+
+  select lower(p.email)
+    into v_email
+  from public.profiles p
+  where p.id = auth.uid();
+
+  insert into public.game_sessions (
+    code,
+    title,
+    academic_year,
+    status,
+    model_version,
+    created_by,
+    is_test
+  )
+  values (
+    v_code,
+    v_title,
+    v_source.academic_year,
+    'registration_open',
+    v_source.model_version,
+    auth.uid(),
+    v_source.is_test
+  )
+  returning id into v_new_session_id;
+
+  insert into public.session_members (session_id, user_id, role)
+  values (v_new_session_id, auth.uid(), 'admin');
+
+  insert into public.staff_authorizations (
+    session_id,
+    email,
+    role,
+    authorized_by,
+    claimed_by,
+    claimed_at
+  )
+  values (
+    v_new_session_id,
+    v_email,
+    'admin',
+    auth.uid(),
+    auth.uid(),
+    now()
+  );
+
+  insert into public.session_events (
+    session_id,
+    actor_user_id,
+    event_type,
+    payload
+  )
+  values (
+    v_new_session_id,
+    auth.uid(),
+    'session_duplicated',
+    jsonb_build_object(
+      'source_session_id', p_source_session_id,
+      'source_code', v_source.code,
+      'new_code', v_code,
+      'is_test', v_source.is_test
+    )
+  );
+
+  return v_new_session_id;
+end;
+$$;
+
+revoke all on function public.admin_duplicate_session(uuid, text, text)
+  from public, anon;
+grant execute on function public.admin_duplicate_session(uuid, text, text)
+  to authenticated;
+
+create or replace function public.complete_google_session_join(
+  p_session_code text
+)
+returns table (
+  session_id uuid,
+  assigned_role public.app_role
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_email text;
+  v_full_name text;
+  v_provider text;
+  v_providers jsonb;
+  v_session_id uuid;
+  v_session_status public.session_status;
+  v_is_test boolean;
+  v_existing_role public.app_role;
+  v_role public.app_role := 'student';
+  v_authorization_id uuid;
+  v_target_in_team boolean;
+begin
+  v_user_id := auth.uid();
+
+  if v_user_id is null then
+    raise exception 'AUTH_REQUIRED';
+  end if;
+
+  select
+    lower(coalesce(u.email, '')),
+    coalesce(
+      nullif(trim(u.raw_user_meta_data ->> 'full_name'), ''),
+      nullif(trim(u.raw_user_meta_data ->> 'name'), ''),
+      split_part(coalesce(u.email, ''), '@', 1)
+    ),
+    coalesce(u.raw_app_meta_data ->> 'provider', ''),
+    coalesce(u.raw_app_meta_data -> 'providers', '[]'::jsonb)
+  into
+    v_email,
+    v_full_name,
+    v_provider,
+    v_providers
+  from auth.users u
+  where u.id = v_user_id
+    and u.email_confirmed_at is not null;
+
+  if v_email is null or v_email = '' then
+    raise exception 'VERIFIED_EMAIL_REQUIRED';
+  end if;
+
+  if v_provider <> 'google' and not (v_providers ? 'google') then
+    raise exception 'GOOGLE_PROVIDER_REQUIRED';
+  end if;
+
+  select gs.id, gs.status, gs.is_test
+    into v_session_id, v_session_status, v_is_test
+  from public.game_sessions gs
+  where gs.code = upper(trim(p_session_code))
+  limit 1;
+
+  if v_session_id is null then
+    raise exception 'SESSION_NOT_FOUND';
+  end if;
+
+  if v_session_status = 'archived' then
+    raise exception 'SESSION_ARCHIVED';
+  end if;
+
+  if not v_is_test and not private.is_unito_email(v_email) then
+    raise exception 'UNSUPPORTED_EMAIL_DOMAIN';
+  end if;
+
+  select sm.role
+    into v_existing_role
+  from public.session_members sm
+  where sm.session_id = v_session_id
+    and sm.user_id = v_user_id
+  limit 1;
+
+  select sa.id, sa.role
+    into v_authorization_id, v_role
+  from public.staff_authorizations sa
+  where sa.session_id = v_session_id
+    and sa.email = v_email
+    and sa.revoked_at is null
+    and sa.role in ('teacher', 'admin')
+  order by sa.authorized_at desc
+  limit 1;
+
+  if v_authorization_id is null then
+    if v_existing_role in ('teacher', 'admin') then
+      v_role := v_existing_role;
+    else
+      v_role := 'student';
+    end if;
+  end if;
+
+  if v_existing_role is null
+     and v_role = 'student'
+     and v_session_status <> 'registration_open' then
+    raise exception 'REGISTRATION_CLOSED';
+  end if;
+
+  if v_role in ('teacher', 'admin') then
+    select exists (
+      select 1
+      from public.team_members tm
+      join public.teams t on t.id = tm.team_id
+      where tm.user_id = v_user_id
+        and t.session_id = v_session_id
+    )
+    into v_target_in_team;
+
+    if v_target_in_team then
+      raise exception 'TARGET_IN_STUDENT_TEAM';
+    end if;
+  end if;
+
+  insert into public.profiles (id, full_name, email, role)
+  values (
+    v_user_id,
+    v_full_name,
+    v_email,
+    v_role
+  )
+  on conflict (id) do update
+    set full_name = excluded.full_name,
+        email = excluded.email,
+        role = case
+          when public.profiles.role = 'admin' then 'admin'::public.app_role
+          when excluded.role = 'admin' then 'admin'::public.app_role
+          when public.profiles.role = 'teacher' then 'teacher'::public.app_role
+          when excluded.role = 'teacher' then 'teacher'::public.app_role
+          else 'student'::public.app_role
+        end;
+
+  insert into public.session_members (session_id, user_id, role)
+  values (v_session_id, v_user_id, v_role)
+  on conflict (session_id, user_id) do update
+    set role = case
+      when public.session_members.role = 'admin' then 'admin'::public.app_role
+      when excluded.role = 'admin' then 'admin'::public.app_role
+      when public.session_members.role = 'teacher' then 'teacher'::public.app_role
+      when excluded.role = 'teacher' then 'teacher'::public.app_role
+      else 'student'::public.app_role
+    end
+  returning role into v_role;
+
+  if v_authorization_id is not null then
+    update public.staff_authorizations
+    set claimed_by = v_user_id,
+        claimed_at = coalesce(claimed_at, now())
+    where id = v_authorization_id;
+  end if;
+
+  insert into public.session_events (
+    session_id,
+    actor_user_id,
+    event_type,
+    payload
+  )
+  values (
+    v_session_id,
+    v_user_id,
+    'google_oauth_session_join',
+    jsonb_build_object(
+      'email', v_email,
+      'role', v_role,
+      'is_test', v_is_test
+    )
+  );
+
+  return query
+  select v_session_id, v_role;
+end;
+$$;
+
+revoke all on function public.complete_google_session_join(text)
+  from public, anon;
+grant execute on function public.complete_google_session_join(text)
+  to authenticated;
