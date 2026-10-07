@@ -4206,3 +4206,79 @@ button {
     width: 100%;
   }
 }
+
+
+.result-causality-note {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--cfo-status-blue-bg);
+  color: var(--cfo-status-blue);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.final-value-breakdown-card {
+  margin-top: 24px;
+  padding: 22px 24px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 14px;
+  background: var(--cfo-surface-white);
+}
+
+.final-value-breakdown-card h2 {
+  margin: 9px 0 0;
+  font-size: 19px;
+}
+
+.final-value-breakdown-card > div:first-child > p {
+  max-width: 850px;
+  margin: 8px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 11px;
+  line-height: 17px;
+}
+
+.final-value-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.final-value-breakdown-grid article {
+  min-height: 92px;
+  padding: 13px 14px;
+  border-radius: 10px;
+  background: var(--cfo-surface-subtle);
+}
+
+.final-value-breakdown-grid span,
+.final-value-breakdown-grid small {
+  display: block;
+  color: var(--cfo-text-secondary);
+  font-size: 9px;
+  line-height: 14px;
+}
+
+.final-value-breakdown-grid strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+.final-value-breakdown-grid small {
+  margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .final-value-breakdown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .final-value-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+}
