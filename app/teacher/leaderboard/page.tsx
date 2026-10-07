@@ -22,7 +22,7 @@ function moneyBn(value: number) {
 export default async function TeacherLeaderboardPage({
   searchParams,
 }: TeacherLeaderboardProps) {
-  const { supabase, profile, session } = await requireTeacherGameContext();
+  const { supabase, profile, membership, session } = await requireTeacherGameContext();
 
   if (session.status !== "completed") {
     redirect("/teacher");
@@ -83,9 +83,16 @@ export default async function TeacherLeaderboardPage({
               documentazione AI richiesta ai team.
             </p>
           </div>
-          <div className="status-badge green">
-            <span className="status-dot" />
-            {scores?.length ?? 0} team calcolati
+          <div className="leaderboard-heading-actions">
+            {membership.role === "admin" ? (
+              <a className="button-secondary" href="/admin/teachers">
+                Gestisci accessi
+              </a>
+            ) : null}
+            <div className="status-badge green">
+              <span className="status-dot" />
+              {scores?.length ?? 0} team calcolati
+            </div>
           </div>
         </section>
 

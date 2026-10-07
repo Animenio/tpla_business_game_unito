@@ -224,6 +224,22 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
 
         {error ? <div className="page-error teacher-error">{error}</div> : null}
 
+        {staffMembership.role === "admin" ? (
+          <section className="admin-access-banner">
+            <div>
+              <div className="card-eyebrow">AMMINISTRAZIONE</div>
+              <strong>Gestisci docenti e amministratori della sessione</strong>
+              <span>
+                Autorizza email UniTo, assegna i ruoli e revoca gli accessi
+                senza intervenire manualmente su Supabase.
+              </span>
+            </div>
+            <a className="button-secondary" href="/admin/teachers">
+              Gestisci accessi
+            </a>
+          </section>
+        ) : null}
+
         <section className="teacher-metrics" aria-label="Metriche sessione">
           <article>
             <span>Studenti registrati</span>
