@@ -530,7 +530,18 @@ describe("v0.5.2 quantitative game-balance audit", () => {
         8,
       );
 
-      console.log("BALANCE_AUDIT_JSON=" + JSON.stringify(report));
+      console.log("BALANCE_META=" + JSON.stringify(report.meta));
+      console.log("BALANCE_ANCHORS=" + JSON.stringify(report.anchors));
+      console.log("BALANCE_RANDOM_SPACE=" + JSON.stringify(report.randomSpace));
+      console.log("BALANCE_CORRELATIONS=" + JSON.stringify(report.correlations));
+      console.log("BALANCE_CATEGORY_MEANS=" + JSON.stringify(report.categoricalMeans));
+      console.log("BALANCE_TOP1=" + JSON.stringify(report.top1));
+      console.log("BALANCE_TOP5=" + JSON.stringify(report.top5));
+      console.log("BALANCE_BOTTOM1=" + JSON.stringify(report.bottom1));
+      console.log("BALANCE_TOP_BOUNDARY_FLAGS=" + JSON.stringify(report.topBoundaryFlags));
+      console.log("BALANCE_OAT_NUMERIC=" + JSON.stringify(report.oneAtATimeNumeric));
+      console.log("BALANCE_OAT_CATEGORIES=" + JSON.stringify(report.oneAtATimeCategories));
+      console.log("BALANCE_ROUND_DISPERSION=" + JSON.stringify(report.roundOnlyDispersion));
     },
     60_000,
   );
