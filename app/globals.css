@@ -3383,3 +3383,29 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+
+.leaderboard-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.leaderboard-heading-actions .button-secondary {
+  min-width: 140px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 720px) {
+  .leaderboard-heading-actions {
+    width: 100%;
+  }
+
+  .leaderboard-heading-actions .button-secondary {
+    width: 100%;
+  }
+}
