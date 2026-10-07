@@ -210,7 +210,7 @@ export default async function DecisionsPage({
             </a>
             <div className="scenario-time">
               <span>Tempo rimasto</span>
-              <RoundTimer closesAt={gameRound.closes_at} compact />
+              <RoundTimer closesAt={gameRound.closes_at} roundId={gameRound.id} compact />
             </div>
           </div>
         </section>
