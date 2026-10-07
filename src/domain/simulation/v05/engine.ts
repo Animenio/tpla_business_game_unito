@@ -1134,6 +1134,60 @@ function runSimulation(
   };
 }
 
+export interface RoundSimulationResult {
+  modelVersion: ModelVersion;
+  round: RoundNumber;
+  decisions: DecisionSet;
+  annual: Partial<Record<ModelYear, AnnualResult>>;
+  openingState: ModelState;
+  closingState: ModelState;
+  finalYear: AnnualResult;
+}
+
+export function simulateRound(
+  openingState: ModelState,
+  decisions: DecisionSet,
+  round: RoundNumber,
+): RoundSimulationResult {
+  assertValidDecisionSet(decisions, round);
+  const years: readonly ModelYear[] =
+    round === 1
+      ? [2026]
+      : round === 2
+        ? [2027, 2028]
+        : [2029, 2030];
+
+  let state = openingState;
+  const annual: Partial<Record<ModelYear, AnnualResult>> = {};
+  let finalYear: AnnualResult | null = null;
+
+  for (const year of years) {
+    const result = simulateAnnual(
+      year,
+      state,
+      ANNUAL_SCENARIOS[year],
+      policyFromDecision(decisions),
+    );
+    annual[year] = result;
+    finalYear = result;
+    state = result.closingState;
+  }
+
+  if (!finalYear) {
+    throw new Error("ROUND_HAS_NO_YEARS");
+  }
+
+  return {
+    modelVersion: MODEL_VERSION,
+    round,
+    decisions,
+    annual,
+    openingState,
+    closingState: state,
+    finalYear,
+  };
+}
+
 export function simulateGame(
   decisionsByRound: Record<
     RoundNumber,
