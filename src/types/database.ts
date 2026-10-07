@@ -79,6 +79,8 @@ export type Database = {
           is_test: boolean
           model_version: string
           registration_locked_at: string | null
+          results_released_at: string | null
+          results_released_by: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["session_status"]
           title: string
@@ -95,6 +97,8 @@ export type Database = {
           is_test?: boolean
           model_version?: string
           registration_locked_at?: string | null
+          results_released_at?: string | null
+          results_released_by?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title: string
@@ -111,6 +115,8 @@ export type Database = {
           is_test?: boolean
           model_version?: string
           registration_locked_at?: string | null
+          results_released_at?: string | null
+          results_released_by?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title?: string
@@ -120,6 +126,13 @@ export type Database = {
           {
             foreignKeyName: "game_sessions_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_sessions_results_released_by_fkey"
+            columns: ["results_released_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -808,6 +821,10 @@ export type Database = {
       teacher_open_round: {
         Args: { p_round_id: string; p_window_minutes?: number }
         Returns: Database["public"]["Enums"]["round_status"]
+      }
+      teacher_release_final_results: {
+        Args: { p_session_id: string }
+        Returns: string
       }
       teacher_restart_simulation: {
         Args: { p_session_id: string }
