@@ -120,6 +120,23 @@ Legacy v0.4 retains the original numeric medians.
 
 The teacher session and live-round headings now surface the active World Model version. This reduces the risk of running a class on an unintended historical model.
 
+### Issue found and fixed — closed-round debrief
+
+The teacher round page previously kept showing decision-side live metrics after closure and the “Vedi risultati” action led to a page with little outcome information.
+
+Closed rounds now show class medians for:
+
+- revenue;
+- EBITDA margin;
+- net debt;
+- strategic health;
+
+together with the number of team results calculated. Open rounds continue to show live decision/submission signals.
+
+### Issue found and fixed — completed-session lobby
+
+A student manually revisiting `/lobby` after completion could remain on the pre-game screen. Completed sessions now redirect directly to `/final`.
+
 ## 4. Documentation inconsistencies fixed
 
 Active documentation had three stale statements:
@@ -154,6 +171,8 @@ This is a source-level check. Pixel-level overflow, focus behavior, mobile keybo
 | Data Room provisioning | PASS |
 | Student route logic | PASS after fix |
 | Teacher route logic | PASS after fix |
+| Closed-round debrief | PASS after fix |
+| Completed-session redirect | PASS after fix |
 | Close-round UX/backend consistency | PASS after fix |
 | Reduced-model teacher semantics | PASS after fix |
 | Version visibility | PASS after fix |

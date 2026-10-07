@@ -105,6 +105,10 @@ export default async function LobbyPage({
     redirect("/case-study");
   }
 
+  if (session.status === "completed") {
+    redirect("/final");
+  }
+
   const { data: memberRows } = await supabase
     .from("team_members")
     .select("user_id, joined_at")
@@ -133,7 +137,6 @@ export default async function LobbyPage({
 
   const params = await searchParams;
   const error = param(params.error);
-  const waiting = session.status !== "completed";
   const membershipEditable =
     session.status === "registration_open" && team.status === "forming";
 
@@ -155,9 +158,9 @@ export default async function LobbyPage({
               non avvia la simulazione.
             </p>
           </div>
-          <div className={waiting ? "status-badge amber" : "status-badge green"}>
+          <div className="status-badge amber">
             <span className="status-dot" />
-            {waiting ? "In attesa del docente" : "Sessione avviata"}
+            In attesa del docente
           </div>
         </section>
 
@@ -232,7 +235,7 @@ export default async function LobbyPage({
               </div>
               <div>
                 <dt>Anno</dt>
-                <dd>{session.status === "completed" ? "Conclusa" : "Non iniziato"}</dd>
+                <dd>Non iniziato</dd>
               </div>
               <div>
                 <dt>Timer</dt>
@@ -243,16 +246,12 @@ export default async function LobbyPage({
             <div className="data-room-box">
               <strong>DATA ROOM</strong>
               <p>
-                {session.status === "completed"
-                  ? "La simulazione è conclusa."
-                  : "Sarà sbloccata quando il docente avvierà la simulazione."}
+                Sarà sbloccata quando il docente avvierà la simulazione.
               </p>
             </div>
 
             <div className="wait-box">
-              {session.status === "completed"
-                ? "Simulazione conclusa"
-                : "Attendi l’avvio della simulazione"}
+              Attendi l’avvio della simulazione
             </div>
           </aside>
         </div>
