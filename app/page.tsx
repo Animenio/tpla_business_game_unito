@@ -78,7 +78,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   <input
                     autoCapitalize="characters"
                     name="session_code"
-                    placeholder="ACCOUNTING26"
+                    placeholder="Es. TEST-EUG-01"
                     required
                   />
                 </label>
@@ -141,7 +141,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 <input
                   autoCapitalize="characters"
                   name="session_code"
-                  placeholder="ACCOUNTING26"
+                  placeholder="Es. TEST-EUG-01"
                   required
                 />
               </label>
