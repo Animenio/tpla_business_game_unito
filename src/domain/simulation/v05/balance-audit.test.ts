@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { simulateGame } from "./engine";
+import { simulateGame, simulateIntermediateValue } from "./engine";
 import {
   DEFAULT_DECISIONS,
   type DecisionSet,
@@ -643,6 +643,133 @@ function multiStartCoordinateAscent() {
   };
 }
 
+
+function optimizeSingleRound(
+  decisions: Record<RoundNumber, DecisionSet>,
+  round: RoundNumber,
+  evaluate: (candidate: Record<RoundNumber, DecisionSet>) => number,
+): { value: number; sweeps: number } {
+  let value = evaluate(decisions);
+  let sweeps = 0;
+
+  for (let sweep = 0; sweep < 12; sweep += 1) {
+    const openingValue = value;
+
+    for (const key of NUMERIC_KEYS) {
+      let localBestValue = decisions[round][key];
+      let localBestScore = value;
+
+      for (const candidateValue of GRID[key]) {
+        const candidate = {
+          1: { ...decisions[1] },
+          2: { ...decisions[2] },
+          3: { ...decisions[3] },
+        };
+        setNumeric(candidate, round, key, candidateValue);
+        const score = evaluate(candidate);
+        if (score > localBestScore + 1e-9) {
+          localBestScore = score;
+          localBestValue = candidateValue;
+        }
+      }
+
+      setNumeric(decisions, round, key, localBestValue);
+      value = localBestScore;
+    }
+
+    {
+      let localBest = decisions[round].rnd_orientation;
+      let localBestScore = value;
+      for (const orientation of ORIENTATIONS[round]) {
+        const candidate = {
+          1: { ...decisions[1] },
+          2: { ...decisions[2] },
+          3: { ...decisions[3] },
+        };
+        candidate[round].rnd_orientation = orientation;
+        const score = evaluate(candidate);
+        if (score > localBestScore + 1e-9) {
+          localBestScore = score;
+          localBest = orientation;
+        }
+      }
+      decisions[round].rnd_orientation = localBest;
+      value = localBestScore;
+    }
+
+    {
+      let localBest = decisions[round].resilience_policy;
+      let localBestScore = value;
+      for (const resilience of RESILIENCE) {
+        const candidate = {
+          1: { ...decisions[1] },
+          2: { ...decisions[2] },
+          3: { ...decisions[3] },
+        };
+        candidate[round].resilience_policy = resilience;
+        const score = evaluate(candidate);
+        if (score > localBestScore + 1e-9) {
+          localBestScore = score;
+          localBest = resilience;
+        }
+      }
+      decisions[round].resilience_policy = localBest;
+      value = localBestScore;
+    }
+
+    sweeps += 1;
+    if (value <= openingValue + 1e-9) break;
+  }
+
+  return { value, sweeps };
+}
+
+function rollingHorizonOptimization() {
+  const decisions = copyDefaults();
+  const checkpoints: Record<string, unknown> = {};
+
+  const r1 = optimizeSingleRound(
+    decisions,
+    1,
+    (candidate) =>
+      simulateIntermediateValue(candidate, 1).valuation.finalGameValue,
+  );
+  checkpoints.round1 = {
+    decisions: { ...decisions[1] },
+    intermediateFgv: r1.value,
+    sweeps: r1.sweeps,
+  };
+
+  const r2 = optimizeSingleRound(
+    decisions,
+    2,
+    (candidate) =>
+      simulateIntermediateValue(candidate, 2).valuation.finalGameValue,
+  );
+  checkpoints.round2 = {
+    decisions: { ...decisions[2] },
+    intermediateFgv: r2.value,
+    sweeps: r2.sweeps,
+  };
+
+  const r3 = optimizeSingleRound(
+    decisions,
+    3,
+    (candidate) => simulateGame(candidate).valuation.finalGameValue,
+  );
+  checkpoints.round3 = {
+    decisions: { ...decisions[3] },
+    finalFgv: r3.value,
+    sweeps: r3.sweeps,
+  };
+
+  return {
+    decisions,
+    checkpoints,
+    finalFgv: simulateGame(decisions).valuation.finalGameValue,
+  };
+}
+
 describe("v0.5.2 quantitative game-balance audit", () => {
   it(
     "samples the admissible strategy space and emits a deterministic audit report",
@@ -709,6 +836,7 @@ describe("v0.5.2 quantitative game-balance audit", () => {
         oneAtATimeCategories: oneAtATimeCategories(),
         roundOnlyDispersion: roundOnlyDispersion(),
         coordinateAscent: multiStartCoordinateAscent(),
+        rollingHorizon: rollingHorizonOptimization(),
       };
 
       expect(samples).toHaveLength(SAMPLE_SIZE);
@@ -802,6 +930,10 @@ describe("v0.5.2 quantitative game-balance audit", () => {
       console.log(
         "BALANCE_COORD_CATEGORIES=" +
           JSON.stringify(report.coordinateAscent.categoricalShares),
+      );
+      console.log(
+        "BALANCE_ROLLING_HORIZON=" +
+          JSON.stringify(report.rollingHorizon),
       );
     },
     60_000,
