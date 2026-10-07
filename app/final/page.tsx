@@ -206,6 +206,43 @@ export default async function FinalPage() {
           </div>
         </section>
 
+        {isV05 ? (
+          <section className="final-value-breakdown-card">
+            <div>
+              <div className="card-eyebrow">COME SI FORMA IL VALORE</div>
+              <h2>Valore operativo esplicito + continuazione − rischio finanziario</h2>
+              <p>
+                Il valore finale non coincide con il solo utile del 2030. Il
+                World Model combina i flussi di cassa espliciti, il valore della
+                continuazione dell’impresa e l’eventuale costo atteso di
+                distress.
+              </p>
+            </div>
+            <div className="final-value-breakdown-grid">
+              <article>
+                <span>PV flussi espliciti</span>
+                <strong>{moneyBn(Number(finalScore.pv_explicit_ufcf))}</strong>
+                <small>UFCF 2026–2031 attualizzati</small>
+              </article>
+              <article>
+                <span>PV valore terminale</span>
+                <strong>{moneyBn(Number(finalScore.pv_terminal_value))}</strong>
+                <small>continuità operativa oltre il piano</small>
+              </article>
+              <article>
+                <span>Enterprise value</span>
+                <strong>{moneyBn(Number(finalScore.enterprise_value))}</strong>
+                <small>prima della posizione finanziaria iniziale</small>
+              </article>
+              <article>
+                <span>Costo atteso di distress</span>
+                <strong>{moneyBn(Number(finalScore.risk_penalty))}</strong>
+                <small>penalità solo se la leva diventa critica</small>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
         <section className="final-kpis">
           <article>
             <span>Ricavi finali (2030)</span>
