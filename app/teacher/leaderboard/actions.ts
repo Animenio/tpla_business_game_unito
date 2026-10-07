@@ -58,3 +58,28 @@ export async function verifyAiEvidenceAction(formData: FormData) {
   revalidatePath("/final");
   redirect("/teacher/leaderboard");
 }
+
+
+export async function releaseFinalResultsAction() {
+  const { supabase, session } = await requireTeacherGameContext();
+
+  const { error } = await supabase.rpc("teacher_release_final_results", {
+    p_session_id: session.id,
+  });
+
+  if (error) {
+    const message = error.message.includes("AI_SUBMISSIONS_INCOMPLETE")
+      ? "Non tutti i team hanno ancora registrato la consegna AI."
+      : error.message.includes("FINAL_SCORES_INCOMPLETE")
+        ? "I risultati finali non sono completi."
+        : error.message.includes("SIMULATION_NOT_COMPLETED")
+          ? "La simulazione non è ancora completata."
+          : "Impossibile pubblicare la classifica.";
+
+    redirect(routeError(message));
+  }
+
+  revalidatePath("/teacher/leaderboard");
+  revalidatePath("/final");
+  redirect("/teacher/leaderboard");
+}

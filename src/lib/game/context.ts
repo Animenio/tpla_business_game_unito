@@ -42,9 +42,7 @@ export async function requireStudentGameContext() {
   const [{ data: session }, { data: profile }] = await Promise.all([
     supabase
       .from("game_sessions")
-      .select(
-        "id, code, title, status, model_version, started_at, academic_year, is_test",
-      )
+      .select("*")
       .eq("id", membership.session_id)
       .single(),
     supabase
@@ -114,9 +112,7 @@ export async function requireTeacherGameContext() {
   const sessionIds = memberships.map((item) => item.session_id);
   const { data: sessions } = await supabase
     .from("game_sessions")
-    .select(
-      "id, code, title, status, model_version, started_at, academic_year, is_test",
-    )
+    .select("*")
     .in("id", sessionIds);
 
   const sessionMap = new Map((sessions ?? []).map((session) => [session.id, session]));

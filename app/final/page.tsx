@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
+import { GameRealtime } from "@/src/components/game-realtime";
 import { objectiveLabel } from "@/src/domain/game/round-content";
 import { BASELINE_2025 as BASELINE_V04 } from "@/src/domain/simulation/v04/spec";
 import {
@@ -80,6 +81,15 @@ export default async function FinalPage() {
     redirect("/case-study");
   }
 
+  const resultsReleased = Boolean(session.results_released_at);
+  const benchmarkRequest = resultsReleased
+    ? supabase.rpc("student_final_benchmark", { p_session_id: session.id })
+    : Promise.resolve({ data: [] as Array<{
+        own_rank: number;
+        total_teams: number;
+        median_final_game_value: number;
+      }> });
+
   const [
     { data: finalScore },
     { data: benchmarkRows },
@@ -92,7 +102,7 @@ export default async function FinalPage() {
       .eq("session_id", session.id)
       .eq("team_id", team.id)
       .maybeSingle(),
-    supabase.rpc("student_final_benchmark", { p_session_id: session.id }),
+    benchmarkRequest,
     supabase
       .from("game_rounds")
       .select("id, round_number, period_label, scenario_title")
@@ -168,6 +178,7 @@ export default async function FinalPage() {
 
   return (
     <main className="application-page">
+      <GameRealtime sessionId={session.id} teamId={team.id} />
       <AppHeader
         section="Risultato finale"
         sessionCode="SIMULAZIONE COMPLETATA"
@@ -179,11 +190,12 @@ export default async function FinalPage() {
           <div>
             <h1>{team.name} — Report finale</h1>
             <p>
-              Il gioco è terminato. Il report combina valore creato, KPI finali,
-              decisioni dei tre round e benchmark rispetto alla classe.
+              {resultsReleased
+                ? "Il gioco è terminato. Il report combina valore creato, KPI finali, decisioni dei tre round e benchmark rispetto alla classe."
+                : "Il gioco è terminato. Completate la consegna AI: il docente mostrerà la classifica solo quando tutti i team avranno registrato il materiale richiesto."}
             </p>
           </div>
-          {rank && totalTeams ? (
+          {resultsReleased && rank && totalTeams ? (
             <div className="status-badge green">
               <span className="status-dot" />
               {rank}° di {totalTeams} team
@@ -191,34 +203,53 @@ export default async function FinalPage() {
           ) : null}
         </section>
 
-        <section className="final-value-hero">
-          <div>
-            <span>VALORE FINALE SIMULATO</span>
-            <strong>{moneyBn(Number(finalScore.final_game_value))}</strong>
-            <small>
-              La classifica premia il valore creato nel tempo, non un singolo
-              KPI annuale.
-            </small>
-          </div>
-          <div className="final-hero-metric">
-            <span>Posizione</span>
-            <strong>{rank ? `${rank}° posto` : "—"}</strong>
-          </div>
-          <div className="final-hero-metric">
-            <span>vs class median</span>
-            <strong>{vsMedian === null ? "—" : signedPercent(vsMedian)}</strong>
-          </div>
-          <div className="final-hero-metric">
-            <span>FCF cumulato</span>
-            <strong>{moneyBn(Number(finalScore.cumulative_ufcf))}</strong>
-          </div>
-          <div className="final-hero-metric">
-            <span>Solidità strategica</span>
-            <strong>{Number(finalScore.strategic_health).toFixed(2)}x</strong>
-          </div>
-        </section>
+        {resultsReleased ? (
+          <section className="final-value-hero">
+            <div>
+              <span>VALORE FINALE SIMULATO</span>
+              <strong>{moneyBn(Number(finalScore.final_game_value))}</strong>
+              <small>
+                La classifica premia il valore creato nel tempo, non un singolo
+                KPI annuale.
+              </small>
+            </div>
+            <div className="final-hero-metric">
+              <span>Posizione</span>
+              <strong>{rank ? `${rank}° posto` : "—"}</strong>
+            </div>
+            <div className="final-hero-metric">
+              <span>vs class median</span>
+              <strong>{vsMedian === null ? "—" : signedPercent(vsMedian)}</strong>
+            </div>
+            <div className="final-hero-metric">
+              <span>FCF cumulato</span>
+              <strong>{moneyBn(Number(finalScore.cumulative_ufcf))}</strong>
+            </div>
+            <div className="final-hero-metric">
+              <span>Solidità strategica</span>
+              <strong>{Number(finalScore.strategic_health).toFixed(2)}x</strong>
+            </div>
+          </section>
+        ) : (
+          <section className="final-results-locked">
+            <div className="card-eyebrow">CLASSIFICA BLOCCATA</div>
+            <h2>Il risultato comparativo verrà svelato dal docente</h2>
+            <p>
+              Potete già rivedere le vostre scelte e i KPI operativi. Valore
+              finale, posizione e benchmark della classe restano nascosti fino
+              alla pubblicazione ufficiale.
+            </p>
+            <div className="final-results-locked-status">
+              <span className={aiDone ? "status-badge green" : "status-badge amber"}>
+                <span className="status-dot" />
+                {aiDone ? "Consegna AI registrata" : "Consegna AI da completare"}
+              </span>
+              <strong>Attendi “Mostra risultati” dal docente</strong>
+            </div>
+          </section>
+        )}
 
-        {isReducedModel ? (
+        {isReducedModel && resultsReleased ? (
           <section className="final-value-breakdown-card">
             <div>
               <div className="card-eyebrow">COME SI FORMA IL VALORE</div>
@@ -336,11 +367,17 @@ export default async function FinalPage() {
                 Conversazione AI {aiDone ? "registrata" : "da caricare"}
               </li>
               <li>KPI e conseguenze round per round</li>
-              <li>Benchmark rispetto alla classe</li>
+              <li>
+                {resultsReleased
+                  ? "Benchmark rispetto alla classe"
+                  : "Classifica e benchmark: in attesa del docente"}
+              </li>
             </ul>
             <p>
               {aiDone
-                ? "La consegna AI è stata registrata. Il docente potrà verificarla."
+                ? resultsReleased
+                  ? "La consegna AI è stata registrata e la classifica è stata pubblicata."
+                  : "La consegna AI è stata registrata. Attendete che tutti i team completino la consegna e che il docente pubblichi la classifica."
                 : "Per completare la consegna manca l’evidenza della conversazione AI del team."}
             </p>
             <a className="button-primary" href="/ai-chat">

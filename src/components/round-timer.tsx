@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/src/lib/supabase/client";
 
 interface RoundTimerProps {
   closesAt: string | null;
+  roundId?: string;
   compact?: boolean;
 }
 
@@ -22,20 +24,78 @@ function display(seconds: number | null) {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 }
 
-export function RoundTimer({ closesAt, compact = false }: RoundTimerProps) {
+export function RoundTimer({
+  closesAt,
+  roundId,
+  compact = false,
+}: RoundTimerProps) {
+  const [effectiveClosesAt, setEffectiveClosesAt] = useState(closesAt);
   const [seconds, setSeconds] = useState(() => remainingSeconds(closesAt));
 
   useEffect(() => {
-    setSeconds(remainingSeconds(closesAt));
+    setEffectiveClosesAt(closesAt);
+  }, [closesAt]);
 
-    if (!closesAt) return;
+  useEffect(() => {
+    setSeconds(remainingSeconds(effectiveClosesAt));
+
+    if (!effectiveClosesAt) return;
 
     const timer = window.setInterval(() => {
-      setSeconds(remainingSeconds(closesAt));
+      setSeconds(remainingSeconds(effectiveClosesAt));
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [closesAt]);
+  }, [effectiveClosesAt]);
+
+  useEffect(() => {
+    if (!roundId) return;
+
+    const supabase = createClient();
+    let cancelled = false;
+
+    const syncClosesAt = async () => {
+      const { data } = await supabase
+        .from("game_rounds")
+        .select("closes_at")
+        .eq("id", roundId)
+        .maybeSingle();
+
+      if (!cancelled && data?.closes_at) {
+        setEffectiveClosesAt(data.closes_at);
+      }
+    };
+
+    const channel = supabase
+      .channel(`round-timer:${roundId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "game_rounds",
+          filter: `id=eq.${roundId}`,
+        },
+        (payload) => {
+          const next = payload.new as { closes_at?: string | null };
+          if (!cancelled && next.closes_at) {
+            setEffectiveClosesAt(next.closes_at);
+          }
+        },
+      )
+      .subscribe();
+
+    void syncClosesAt();
+    const poll = window.setInterval(() => {
+      void syncClosesAt();
+    }, 3000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+      void supabase.removeChannel(channel);
+    };
+  }, [roundId]);
 
   const expired = useMemo(
     () => seconds !== null && seconds <= 0,

@@ -1,11 +1,14 @@
 import { reviewDecisionsAction } from "@/app/rounds/actions";
 import {
   ROUND_OBJECTIVES,
-  type RoundObjective,
 } from "@/src/domain/game/round-content";
 import {
   V05_DECISION_BASELINE_CONTEXT,
   V05_DECISION_HELP,
+  V05_ORIENTATION_GUIDE,
+  V05_ORIENTATION_LABELS,
+  V05_RESILIENCE_GUIDE,
+  V05_RESILIENCE_LABELS,
   v05OrientationOptions,
 } from "@/src/domain/game/round-content-v05";
 import {
@@ -14,8 +17,9 @@ import {
 } from "@/src/domain/simulation/v05/storage";
 import {
   DECISION_DEFINITIONS,
-  RESILIENCE_MAPPING,
   type DecisionSet,
+  type ResiliencePolicy,
+  type RndOrientation,
   type RoundNumber,
 } from "@/src/domain/simulation/v05/spec";
 
@@ -49,6 +53,7 @@ function numericInput(
       <input
         defaultValue={percentInput(value)}
         id={key}
+        inputMode="decimal"
         max={max}
         min={min}
         name={key}
@@ -64,15 +69,43 @@ function numericInput(
 
 function cardInfo(key: keyof DecisionSet) {
   return (
-    <details className="decision-info">
-      <summary>ⓘ Info</summary>
-      <div className="decision-info-panel">
+    <div
+      aria-label="Informazioni sulla decisione"
+      className="decision-info"
+      tabIndex={0}
+    >
+      <span className="decision-info-trigger">ⓘ Info</span>
+      <div className="decision-info-panel" role="tooltip">
         <strong>Cosa significa</strong>
         <p>{V05_DECISION_HELP[key]}</p>
         <strong>Riferimento</strong>
         <p>{V05_DECISION_BASELINE_CONTEXT[key]}</p>
       </div>
-    </details>
+    </div>
+  );
+}
+
+function orientationGuide(round: RoundNumber) {
+  return (
+    <div className="decision-choice-guide">
+      {(v05OrientationOptions(round) as readonly RndOrientation[]).map((item) => (
+        <p key={item}>
+          <strong>{item}:</strong> {V05_ORIENTATION_GUIDE[item]}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function resilienceGuide() {
+  return (
+    <div className="decision-choice-guide">
+      {(["Snella", "Standard", "Robusta"] as const).map((item) => (
+        <p key={item}>
+          <strong>{item}:</strong> {V05_RESILIENCE_GUIDE[item]}
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -112,7 +145,8 @@ export function V05DecisionForm({
                 )}
               </div>
               <div className="decision-range">
-                Intervallo: −10% → +10% rispetto ai concorrenti
+                <strong>Range consentito (limiti):</strong> da −10% a +10% rispetto
+                ai concorrenti · incrementi di 1 p.p.
               </div>
             </article>
 
@@ -128,7 +162,8 @@ export function V05DecisionForm({
                 )}
               </div>
               <div className="decision-range">
-                Intervallo: −10% → +10% rispetto ai concorrenti
+                <strong>Range consentito (limiti):</strong> da −10% a +10% rispetto
+                ai concorrenti · incrementi di 1 p.p.
               </div>
             </article>
 
@@ -144,7 +179,8 @@ export function V05DecisionForm({
                 )}
               </div>
               <div className="decision-range">
-                Intervallo: −50% → +100% rispetto al baseline
+                <strong>Range consentito (limiti):</strong> da −50% a +100% rispetto
+                al baseline · incrementi di 5 p.p.
               </div>
             </article>
           </div>
@@ -153,40 +189,39 @@ export function V05DecisionForm({
         <section className="decision-column">
           <h2>INNOVAZIONE E INVESTIMENTI</h2>
           <div className="decision-card-stack">
-            <article className="decision-card">
+            <article className="decision-card decision-card-tall">
               <div className="decision-card-top">
-                <label htmlFor="rnd_pct">
-                  R&S / Ricavi
-                </label>
+                <label htmlFor="rnd_pct">R&S / Ricavi</label>
                 {cardInfo("rnd_pct")}
                 {numericInput("rnd_pct", decisions.rnd_pct)}
               </div>
               <div className="decision-range">
-                Intervallo: 2% → 8% dei ricavi
+                <strong>Range consentito (limiti):</strong> dal 2% all’8% dei
+                ricavi · incrementi di 0,5 p.p.
               </div>
-              <div className="decision-card-top">
-                <label htmlFor="rnd_orientation">
-                  Orientamento R&S
-                </label>
-                {cardInfo("rnd_orientation")}
-                <div className="decision-value-input">
-                  <select
-                    defaultValue={orientation}
-                    id="rnd_orientation"
-                    name="rnd_orientation"
-                    required
-                  >
-                    {v05OrientationOptions(round).map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
+
+              <div className="decision-subcontrol">
+                <div className="decision-card-top">
+                  <label htmlFor="rnd_orientation">
+                    Orientamento R&S
+                  </label>
+                  {cardInfo("rnd_orientation")}
+                  <div className="decision-value-input decision-select-input">
+                    <select
+                      defaultValue={orientation}
+                      id="rnd_orientation"
+                      name="rnd_orientation"
+                      required
+                    >
+                      {v05OrientationOptions(round).map((item) => (
+                        <option key={item} value={item}>
+                          {V05_ORIENTATION_LABELS[item]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
-              <div className="decision-range">
-                Core 10% connected · Bilanciato 30%
-                {round > 1 ? " · Connected 50%" : ""}
+                {orientationGuide(round)}
               </div>
             </article>
 
@@ -199,7 +234,8 @@ export function V05DecisionForm({
                 {numericInput("capex_pct", decisions.capex_pct)}
               </div>
               <div className="decision-range">
-                Intervallo: 3% → 10% dei ricavi
+                <strong>Range consentito (limiti):</strong> dal 3% al 10% dei
+                ricavi · incrementi di 0,5 p.p.
               </div>
             </article>
           </div>
@@ -208,13 +244,13 @@ export function V05DecisionForm({
         <section className="decision-column">
           <h2>RESILIENZA</h2>
           <div className="decision-card-stack">
-            <article className="decision-card">
+            <article className="decision-card decision-card-tall">
               <div className="decision-card-top">
                 <label htmlFor="resilience_policy">
                   Politica di resilienza della supply chain
                 </label>
                 {cardInfo("resilience_policy")}
-                <div className="decision-value-input">
+                <div className="decision-value-input decision-select-input">
                   <select
                     defaultValue={resilience}
                     id="resilience_policy"
@@ -222,20 +258,20 @@ export function V05DecisionForm({
                     required
                   >
                     {(
-                      ["Snella", "Standard", "Robusta"] as const
+                      ["Snella", "Standard", "Robusta"] as const satisfies readonly ResiliencePolicy[]
                     ).map((item) => (
                       <option key={item} value={item}>
-                        {item}
+                        {V05_RESILIENCE_LABELS[item]}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="decision-range">
-                Snella: {RESILIENCE_MAPPING.Snella.inventoryDays} gg / 0% hedge
-                {" · "}Standard: {RESILIENCE_MAPPING.Standard.inventoryDays} gg / 30%
-                {" · "}Robusta: {RESILIENCE_MAPPING.Robusta.inventoryDays} gg / 70%
+                <strong>Scelta categoriale:</strong> selezionate il livello di
+                protezione coerente con la vostra strategia.
               </div>
+              {resilienceGuide()}
             </article>
           </div>
         </section>

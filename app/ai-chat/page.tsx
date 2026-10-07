@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { submitAiEvidenceAction } from "@/app/ai-chat/actions";
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
+import { GameRealtime } from "@/src/components/game-realtime";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
 interface AiChatPageProps {
@@ -45,6 +46,7 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
 
   return (
     <main className="application-page">
+      <GameRealtime sessionId={session.id} teamId={team.id} />
       <AppHeader
         section="Consegna chat AI"
         sessionCode="REPORT FINALE"
@@ -173,7 +175,11 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
 
           <aside className="ai-report-card">
             <div className="card-eyebrow">REPORT FINALE</div>
-            <h2>Cosa verrà associato al report</h2>
+            <h2>
+              {session.results_released_at
+                ? "Classifica pubblicata"
+                : "Completa la consegna e attendi lo svelamento"}
+            </h2>
             <ul>
               <li>Decisioni dei tre round</li>
               <li>Obiettivo dichiarato in ogni round</li>
@@ -200,7 +206,9 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
             ) : null}
 
             <a className="button-secondary ai-back-button" href="/final">
-              Torna al report finale
+              {session.results_released_at
+                ? "Vai ai risultati finali"
+                : "Torna al report in attesa"}
             </a>
           </aside>
         </div>

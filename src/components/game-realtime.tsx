@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 
 interface GameRealtimeProps {
@@ -16,6 +16,7 @@ export function GameRealtime({
   roundId,
 }: GameRealtimeProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const lastSignature = useRef<string | null>(null);
 
   useEffect(() => {
@@ -37,7 +38,11 @@ export function GameRealtime({
       }
 
       if (status === "completed") {
-        router.replace("/final");
+        if (pathname === "/final" || pathname === "/ai-chat") {
+          refresh();
+        } else {
+          router.replace("/final");
+        }
         return true;
       }
 
@@ -48,7 +53,7 @@ export function GameRealtime({
       const [{ data: session }, { data: rounds }] = await Promise.all([
         supabase
           .from("game_sessions")
-          .select("status")
+          .select("*")
           .eq("id", sessionId)
           .maybeSingle(),
         supabase
@@ -66,6 +71,7 @@ export function GameRealtime({
 
       const signature = JSON.stringify({
         sessionStatus: session?.status ?? null,
+        resultsReleasedAt: session?.results_released_at ?? null,
         rounds:
           rounds?.map((round) => ({
             id: round.id,
@@ -184,7 +190,7 @@ export function GameRealtime({
       window.removeEventListener("focus", onFocus);
       void supabase.removeChannel(channel);
     };
-  }, [router, roundId, sessionId, teamId]);
+  }, [pathname, router, roundId, sessionId, teamId]);
 
   return null;
 }

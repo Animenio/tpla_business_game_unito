@@ -97,3 +97,20 @@ Economic calculations remain authoritative synchronous server-side work.
 ## Data Room
 
 `session_materials` stores metadata and external URLs only. Current seed metadata mirrors the approved Figma, while URLs remain null until the final Drive files are shared for classroom access.
+
+
+## Final debrief and ranking release
+
+Round 3 completion calculates and persists every team's final score, but the comparative ranking is not automatically published.
+
+The classroom sequence is:
+
+1. all teams complete Round 3;
+2. students can review their own operating KPIs and decision history, while Final Game Value, rank and class benchmark remain hidden;
+3. every team uploads the required AI-conversation file through the configured external form and clicks **Registra la consegna** in the app;
+4. the teacher console shows a pre-ranking debrief with class medians and decision tendencies for all three rounds;
+5. when every completed team has registered an AI submission, the **Mostra risultati** control becomes available;
+6. the teacher releases the ranking;
+7. student final pages refresh and reveal Final Game Value, position and class benchmark.
+
+The release gate is server-authoritative. `student_final_benchmark` rejects access before `game_sessions.results_released_at` is set. Restarting a simulation clears the release state.
