@@ -6,7 +6,6 @@ import {
   type RoundResult as V04RoundResult,
 } from "./v04/engine";
 import {
-  MODEL_VERSION as V04_MODEL_VERSION,
   type DecisionSet as V04DecisionSet,
   type RoundNumber,
 } from "./v04/spec";
