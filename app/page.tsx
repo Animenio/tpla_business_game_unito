@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { loginAction, registerAction } from "@/app/auth/actions";
+import { signInWithGoogleAction } from "@/app/auth/google-actions";
 
 interface HomeProps {
   searchParams: Promise<{
@@ -69,7 +70,32 @@ export default async function Home({ searchParams }: HomeProps) {
           ) : null}
 
           {mode === "register" ? (
-            <form action={registerAction} className="auth-form">
+            <>
+              <form action={signInWithGoogleAction} className="google-auth-form">
+                <input name="mode" type="hidden" value="register" />
+                <label>
+                  <span>Codice sessione</span>
+                  <input
+                    autoCapitalize="characters"
+                    name="session_code"
+                    placeholder="ACCOUNTING26"
+                    required
+                  />
+                </label>
+                <button className="google-auth-button" type="submit">
+                  Continua con Google
+                </button>
+                <p className="google-auth-note">
+                  Usa il tuo account Google istituzionale UniTo. Non serve
+                  creare o ricordare una password per il Business Game.
+                </p>
+              </form>
+
+              <div className="auth-separator">
+                <span>oppure usa email e password</span>
+              </div>
+
+              <form action={registerAction} className="auth-form">
               <label>
                 <span>Nome</span>
                 <input
@@ -128,9 +154,26 @@ export default async function Home({ searchParams }: HomeProps) {
                 dall’amministratore vengono riconosciuti automaticamente
                 tramite email UniTo.
               </p>
-            </form>
+              </form>
+            </>
           ) : (
-            <form action={loginAction} className="auth-form login-form">
+            <>
+              <form action={signInWithGoogleAction} className="google-auth-form">
+                <input name="mode" type="hidden" value="login" />
+                <button className="google-auth-button" type="submit">
+                  Continua con Google
+                </button>
+                <p className="google-auth-note">
+                  Se hai già partecipato a una sessione, Google ti riporta
+                  direttamente alla tua area.
+                </p>
+              </form>
+
+              <div className="auth-separator">
+                <span>oppure usa email e password</span>
+              </div>
+
+              <form action={loginAction} className="auth-form login-form">
               <label>
                 <span>Email universitaria</span>
                 <input
@@ -157,7 +200,8 @@ export default async function Home({ searchParams }: HomeProps) {
               <Link className="forgot-password-link" href="/forgot-password">
                 Password dimenticata?
               </Link>
-            </form>
+              </form>
+            </>
           )}
         </section>
       </div>
