@@ -151,7 +151,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
   const mixSignal =
     premiumDelta >= 0
       ? `La quota di ricavi Premium è salita di ${pp(premiumDelta)} rispetto al 2025.`
-      : `La quota di ricavi Premium è scesa di ${pp(premiumDelta)} rispetto al 2025.`;
+      : `La quota di ricavi Premium è scesa di ${pp(Math.abs(premiumDelta))} rispetto al 2025.`;
   const strategicSignal =
     result.strategic_health >= 1
       ? `L’indice di solidità strategica è ${result.strategic_health.toFixed(2)}x, sopra il riferimento iniziale 1,00x.`
