@@ -28,10 +28,40 @@ export async function requestPasswordResetAction(formData: FormData) {
   const supabase = await createClient();
 
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl()}/auth/callback?next=/auth/reset-password`,
+    redirectTo: siteUrl() + "/auth/recovery",
   });
 
   redirect("/forgot-password?sent=1");
+}
+
+export async function verifyRecoveryTokenAction(formData: FormData) {
+  const tokenHash = value(formData, "token_hash");
+
+  if (!tokenHash) {
+    redirect(
+      "/forgot-password?error=" +
+        encodeURIComponent(
+          "Il link di recupero non è valido. Richiedine uno nuovo.",
+        ),
+    );
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    type: "recovery",
+    token_hash: tokenHash,
+  });
+
+  if (error) {
+    redirect(
+      "/forgot-password?error=" +
+        encodeURIComponent(
+          "Il link di recupero non è valido o è scaduto. Richiedine uno nuovo.",
+        ),
+    );
+  }
+
+  redirect("/auth/reset-password");
 }
 
 export async function updatePasswordAction(formData: FormData) {

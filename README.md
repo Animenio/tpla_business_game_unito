@@ -196,8 +196,9 @@ Recovery flow:
 ```
 forgot-password
 → Supabase recovery email
-→ /auth/callback
-→ PKCE code exchange
+→ /auth/recovery (non consuma il token)
+→ conferma esplicita dell'utente
+→ verifyOtp(type=recovery)
 → /auth/reset-password
 → new password
 → forced login
@@ -211,3 +212,23 @@ For hosted Supabase, the canonical production URL and callback URL must be allow
 https://cfo-ai-business-game-unito.vercel.app
 https://cfo-ai-business-game-unito.vercel.app/auth/callback
 ```
+
+
+### Recovery email template
+
+Per evitare che gli scanner automatici delle email consumino il link monouso prima dell'utente, il template **Reset password** di Supabase deve puntare alla pagina intermedia dell'app invece di usare direttamente `{{ .ConfirmationURL }}`.
+
+Usare:
+
+```html
+<h2>Reimposta la password</h2>
+<p>Hai richiesto il recupero della password.</p>
+<p>
+  <a href="{{ .SiteURL }}/auth/recovery?token_hash={{ .TokenHash }}&type=recovery">
+    Continua con il recupero
+  </a>
+</p>
+<p>Se non hai richiesto questa operazione, ignora questa email.</p>
+```
+
+La pagina `/auth/recovery` non verifica automaticamente il token: mostra un pulsante che richiede un'azione esplicita dell'utente.
