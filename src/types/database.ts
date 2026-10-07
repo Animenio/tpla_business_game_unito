@@ -279,6 +279,74 @@ export type Database = {
           },
         ]
       }
+      staff_authorizations: {
+        Row: {
+          authorized_at: string
+          authorized_by: string
+          claimed_at: string | null
+          claimed_by: string | null
+          email: string
+          id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          session_id: string
+        }
+        Insert: {
+          authorized_at?: string
+          authorized_by: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          email: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          session_id: string
+        }
+        Update: {
+          authorized_at?: string
+          authorized_by?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          email?: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_authorizations_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_authorizations_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_authorizations_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_authorizations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_ai_submissions: {
         Row: {
           confirmed_cleaned: boolean
@@ -659,6 +727,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_authorize_staff: {
+        Args: {
+          p_email: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_session_id: string
+        }
+        Returns: string
+      }
+      admin_revoke_staff: {
+        Args: { p_authorization_id: string }
+        Returns: undefined
+      }
       create_team: {
         Args: { p_name: string }
         Returns: {
@@ -731,6 +811,10 @@ export type Database = {
       teacher_verify_ai_evidence: {
         Args: { p_team_id: string }
         Returns: Database["public"]["Enums"]["ai_submission_status"]
+      }
+      validate_registration_access: {
+        Args: { p_code: string; p_email: string }
+        Returns: boolean
       }
       validate_session_code: { Args: { p_code: string }; Returns: boolean }
     }
