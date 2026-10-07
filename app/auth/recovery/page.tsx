@@ -3,6 +3,7 @@ import { verifyRecoveryTokenAction } from "@/app/auth/password-actions";
 
 interface RecoveryPageProps {
   searchParams: Promise<{
+    code?: string | string[];
     token_hash?: string | string[];
     type?: string | string[];
   }>;
@@ -16,9 +17,10 @@ export default async function RecoveryPage({
   searchParams,
 }: RecoveryPageProps) {
   const search = await searchParams;
+  const code = param(search.code);
   const tokenHash = param(search.token_hash);
   const type = param(search.type);
-  const valid = Boolean(tokenHash && type === "recovery");
+  const valid = Boolean(code || (tokenHash && type === "recovery"));
 
   return (
     <main className="auth-page">
@@ -43,15 +45,18 @@ export default async function RecoveryPage({
 
           {valid ? (
             <form action={verifyRecoveryTokenAction} className="auth-form">
-              <input name="token_hash" type="hidden" value={tokenHash} />
+              {code ? <input name="code" type="hidden" value={code} /> : null}
+              {tokenHash ? (
+                <input name="token_hash" type="hidden" value={tokenHash} />
+              ) : null}
               <button className="button-primary" type="submit">
                 Continua e imposta una nuova password
               </button>
             </form>
           ) : (
             <div className="form-error">
-              Il link non contiene un token di recupero valido. Richiedi una
-              nuova email.
+              Il link non contiene le informazioni di recupero necessarie.
+              Richiedi una nuova email.
             </div>
           )}
 
