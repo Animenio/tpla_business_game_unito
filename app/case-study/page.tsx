@@ -3,6 +3,8 @@ import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { GameRealtime } from "@/src/components/game-realtime";
 import { requireStudentGameContext } from "@/src/lib/game/context";
+import { V05_DECISION_COUNT } from "@/src/domain/game/round-content-v05";
+import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
 
 export default async function CaseStudyPage() {
   const { supabase, profile, session, team } =
@@ -34,6 +36,7 @@ export default async function CaseStudyPage() {
   ]);
 
   const openRound = rounds?.find((round) => round.status === "open");
+  const isV05 = session.model_version === V05_MODEL_VERSION;
 
   return (
     <main className="application-page">
@@ -116,7 +119,9 @@ export default async function CaseStudyPage() {
               di lungo periodo.
             </p>
           </div>
-          <strong>2026 → 2030 · 3 round strategici · 9 decisioni per round</strong>
+          <strong>
+            2026 → 2030 · 3 round strategici · {isV05 ? V05_DECISION_COUNT : 9} decisioni per round
+          </strong>
         </section>
 
         <section className="research-split">
