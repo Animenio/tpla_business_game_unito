@@ -48,7 +48,7 @@ export async function createSessionAction(formData: FormData) {
   const code = value(formData, "code").toUpperCase();
   const title = value(formData, "title");
   const academicYear = value(formData, "academic_year");
-  const modelVersion = value(formData, "model_version") || "aurora-tyres-v0.4";
+  const modelVersion = value(formData, "model_version") || "aurora-tyres-v0.5.2";
   const isTest = value(formData, "session_type") === "test";
 
   const supabase = await createClient();
