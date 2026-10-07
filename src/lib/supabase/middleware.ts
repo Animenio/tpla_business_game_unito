@@ -23,7 +23,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet, headers) {
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
           });
@@ -35,19 +35,14 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
           });
-
-          Object.entries(headers).forEach(([key, value]) => {
-            response.headers.set(key, value);
-          });
         },
       },
     },
   );
 
-  // Supabase recommends validating/refreshing the cookie-backed session
-  // immediately in middleware. This keeps rotated refresh tokens in sync
-  // between the request seen by Server Components and the response sent
-  // back to the browser.
+  // Validate and, when needed, rotate the cookie-backed session before
+  // Server Components read it. This keeps the request and browser cookies
+  // synchronized across hard refreshes and navigation.
   await supabase.auth.getClaims();
 
   return response;
