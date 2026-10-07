@@ -1,0 +1,938 @@
+import { describe, expect, it } from "vitest";
+
+import { simulateGame, simulateIntermediateValue } from "./engine";
+import {
+  DEFAULT_DECISIONS,
+  type DecisionSet,
+  type RoundNumber,
+  type RndOrientation,
+  type ResiliencePolicy,
+} from "./spec";
+
+const SAMPLE_SIZE = 20_000;
+const ROUND_ONLY_SAMPLE_SIZE = 3_000;
+const SEED = 20261007;
+
+type NumericKey =
+  | "premium_price_positioning"
+  | "standard_price_positioning"
+  | "marketing_change"
+  | "rnd_pct"
+  | "capex_pct";
+
+const NUMERIC_KEYS: readonly NumericKey[] = [
+  "premium_price_positioning",
+  "standard_price_positioning",
+  "marketing_change",
+  "rnd_pct",
+  "capex_pct",
+];
+
+const GRID: Record<NumericKey, readonly number[]> = {
+  premium_price_positioning: range(-0.10, 0.10, 0.01),
+  standard_price_positioning: range(-0.10, 0.10, 0.01),
+  marketing_change: range(-0.50, 1.00, 0.05),
+  rnd_pct: range(0.02, 0.08, 0.005),
+  capex_pct: range(0.03, 0.10, 0.005),
+};
+
+const ORIENTATIONS: Record<RoundNumber, readonly RndOrientation[]> = {
+  1: ["Core", "Bilanciato"],
+  2: ["Core", "Bilanciato", "Connected"],
+  3: ["Core", "Bilanciato", "Connected"],
+};
+
+const RESILIENCE: readonly ResiliencePolicy[] = [
+  "Snella",
+  "Standard",
+  "Robusta",
+];
+
+interface AuditSample {
+  fgv: number;
+  distress: number;
+  finalRevenue: number;
+  finalEbitdaMargin: number;
+  finalNetDebt: number;
+  strategicHealth: number;
+  numeric: Record<string, number>;
+  categorical: Record<string, string>;
+}
+
+function range(start: number, end: number, step: number): number[] {
+  const values: number[] = [];
+  for (let value = start; value <= end + 1e-12; value += step) {
+    values.push(Number(value.toFixed(12)));
+  }
+  return values;
+}
+
+function mulberry32(seed: number): () => number {
+  let a = seed | 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function pick<T>(rand: () => number, values: readonly T[]): T {
+  return values[Math.floor(rand() * values.length)]!;
+}
+
+function copyDefaults(): Record<RoundNumber, DecisionSet> {
+  return {
+    1: { ...DEFAULT_DECISIONS[1] },
+    2: { ...DEFAULT_DECISIONS[2] },
+    3: { ...DEFAULT_DECISIONS[3] },
+  };
+}
+
+function randomRoundDecision(
+  rand: () => number,
+  round: RoundNumber,
+): DecisionSet {
+  return {
+    premium_price_positioning: pick(
+      rand,
+      GRID.premium_price_positioning,
+    ),
+    standard_price_positioning: pick(
+      rand,
+      GRID.standard_price_positioning,
+    ),
+    marketing_change: pick(rand, GRID.marketing_change),
+    rnd_pct: pick(rand, GRID.rnd_pct),
+    rnd_orientation: pick(rand, ORIENTATIONS[round]),
+    capex_pct: pick(rand, GRID.capex_pct),
+    resilience_policy: pick(rand, RESILIENCE),
+  };
+}
+
+function randomStrategy(
+  rand: () => number,
+): Record<RoundNumber, DecisionSet> {
+  return {
+    1: randomRoundDecision(rand, 1),
+    2: randomRoundDecision(rand, 2),
+    3: randomRoundDecision(rand, 3),
+  };
+}
+
+function flatten(
+  decisions: Record<RoundNumber, DecisionSet>,
+): {
+  numeric: Record<string, number>;
+  categorical: Record<string, string>;
+} {
+  const numeric: Record<string, number> = {};
+  const categorical: Record<string, string> = {};
+
+  for (const round of [1, 2, 3] as const) {
+    for (const key of NUMERIC_KEYS) {
+      numeric[`r${round}.${key}`] = decisions[round][key];
+    }
+    categorical[`r${round}.rnd_orientation`] =
+      decisions[round].rnd_orientation;
+    categorical[`r${round}.resilience_policy`] =
+      decisions[round].resilience_policy;
+  }
+
+  return { numeric, categorical };
+}
+
+function sampleStrategy(
+  decisions: Record<RoundNumber, DecisionSet>,
+): AuditSample {
+  const game = simulateGame(decisions);
+  const final = game.annual[2030];
+  const flat = flatten(decisions);
+
+  return {
+    fgv: game.valuation.finalGameValue,
+    distress: game.valuation.pvExpectedDistressCost,
+    finalRevenue: final.totalRevenue,
+    finalEbitdaMargin: final.adjustedEbitdaMargin,
+    finalNetDebt: final.netDebt,
+    strategicHealth: final.strategicHealth,
+    numeric: flat.numeric,
+    categorical: flat.categorical,
+  };
+}
+
+function mean(values: readonly number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function standardDeviation(values: readonly number[]): number {
+  const avg = mean(values);
+  return Math.sqrt(
+    values.reduce((sum, value) => sum + (value - avg) ** 2, 0) /
+      values.length,
+  );
+}
+
+function quantile(sorted: readonly number[], q: number): number {
+  const pos = (sorted.length - 1) * q;
+  const lower = Math.floor(pos);
+  const upper = Math.ceil(pos);
+  if (lower === upper) return sorted[lower]!;
+  const weight = pos - lower;
+  return sorted[lower]! * (1 - weight) + sorted[upper]! * weight;
+}
+
+function summarize(values: readonly number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return {
+    min: sorted[0],
+    p01: quantile(sorted, 0.01),
+    p05: quantile(sorted, 0.05),
+    p25: quantile(sorted, 0.25),
+    median: quantile(sorted, 0.50),
+    p75: quantile(sorted, 0.75),
+    p95: quantile(sorted, 0.95),
+    p99: quantile(sorted, 0.99),
+    max: sorted[sorted.length - 1],
+    mean: mean(sorted),
+    sd: standardDeviation(sorted),
+  };
+}
+
+function pearson(xs: readonly number[], ys: readonly number[]): number {
+  const mx = mean(xs);
+  const my = mean(ys);
+  let covariance = 0;
+  let varianceX = 0;
+  let varianceY = 0;
+
+  for (let index = 0; index < xs.length; index += 1) {
+    const dx = xs[index]! - mx;
+    const dy = ys[index]! - my;
+    covariance += dx * dy;
+    varianceX += dx * dx;
+    varianceY += dy * dy;
+  }
+
+  const denominator = Math.sqrt(varianceX * varianceY);
+  return denominator === 0 ? 0 : covariance / denominator;
+}
+
+function numericCorrelationReport(samples: readonly AuditSample[]) {
+  const fgv = samples.map((sample) => sample.fgv);
+  const keys = Object.keys(samples[0]!.numeric);
+
+  return keys
+    .map((key) => ({
+      key,
+      correlation: pearson(
+        samples.map((sample) => sample.numeric[key]!),
+        fgv,
+      ),
+    }))
+    .sort(
+      (left, right) =>
+        Math.abs(right.correlation) - Math.abs(left.correlation),
+    );
+}
+
+function categoricalMeanReport(samples: readonly AuditSample[]) {
+  const keys = Object.keys(samples[0]!.categorical);
+  const report: Record<string, Record<string, { n: number; meanFgv: number }>> =
+    {};
+
+  for (const key of keys) {
+    const groups = new Map<string, number[]>();
+    for (const sample of samples) {
+      const category = sample.categorical[key]!;
+      const values = groups.get(category) ?? [];
+      values.push(sample.fgv);
+      groups.set(category, values);
+    }
+
+    report[key] = Object.fromEntries(
+      [...groups.entries()].map(([category, values]) => [
+        category,
+        { n: values.length, meanFgv: mean(values) },
+      ]),
+    );
+  }
+
+  return report;
+}
+
+function quantileCohort(
+  samples: readonly AuditSample[],
+  fraction: number,
+  fromTop: boolean,
+): AuditSample[] {
+  const sorted = [...samples].sort((a, b) => a.fgv - b.fgv);
+  const count = Math.max(1, Math.floor(sorted.length * fraction));
+  return fromTop ? sorted.slice(-count) : sorted.slice(0, count);
+}
+
+function cohortSummary(samples: readonly AuditSample[]) {
+  const numericKeys = Object.keys(samples[0]!.numeric);
+  const categoricalKeys = Object.keys(samples[0]!.categorical);
+
+  const numericMean = Object.fromEntries(
+    numericKeys.map((key) => [
+      key,
+      mean(samples.map((sample) => sample.numeric[key]!)),
+    ]),
+  );
+
+  const categoricalShare: Record<string, Record<string, number>> = {};
+  for (const key of categoricalKeys) {
+    const counts = new Map<string, number>();
+    for (const sample of samples) {
+      const value = sample.categorical[key]!;
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    categoricalShare[key] = Object.fromEntries(
+      [...counts.entries()].map(([value, count]) => [
+        value,
+        count / samples.length,
+      ]),
+    );
+  }
+
+  return {
+    n: samples.length,
+    fgv: summarize(samples.map((sample) => sample.fgv)),
+    numericMean,
+    categoricalShare,
+  };
+}
+
+function boundaryConcentration(samples: readonly AuditSample[]) {
+  const report: Record<
+    string,
+    { min: number; max: number; shareAtMin: number; shareAtMax: number }
+  > = {};
+
+  for (const round of [1, 2, 3] as const) {
+    for (const key of NUMERIC_KEYS) {
+      const values = GRID[key];
+      const minValue = values[0]!;
+      const maxValue = values[values.length - 1]!;
+      const flatKey = `r${round}.${key}`;
+      let minCount = 0;
+      let maxCount = 0;
+
+      for (const sample of samples) {
+        const value = sample.numeric[flatKey]!;
+        if (Math.abs(value - minValue) < 1e-12) minCount += 1;
+        if (Math.abs(value - maxValue) < 1e-12) maxCount += 1;
+      }
+
+      report[flatKey] = {
+        min: minValue,
+        max: maxValue,
+        shareAtMin: minCount / samples.length,
+        shareAtMax: maxCount / samples.length,
+      };
+    }
+  }
+
+  return report;
+}
+
+function setNumeric(
+  decisions: Record<RoundNumber, DecisionSet>,
+  round: RoundNumber,
+  key: NumericKey,
+  value: number,
+): void {
+  (
+    decisions[round] as unknown as Record<string, number | string>
+  )[key] = value;
+}
+
+function oneAtATimeNumeric() {
+  const report: Record<
+    string,
+    {
+      baselineValue: number;
+      bestValue: number;
+      bestFgv: number;
+      worstValue: number;
+      worstFgv: number;
+      span: number;
+    }
+  > = {};
+
+  for (const round of [1, 2, 3] as const) {
+    for (const key of NUMERIC_KEYS) {
+      const observations = GRID[key].map((value) => {
+        const decisions = copyDefaults();
+        setNumeric(decisions, round, key, value);
+        return {
+          value,
+          fgv: simulateGame(decisions).valuation.finalGameValue,
+        };
+      });
+
+      const best = observations.reduce((a, b) => (b.fgv > a.fgv ? b : a));
+      const worst = observations.reduce((a, b) => (b.fgv < a.fgv ? b : a));
+
+      report[`r${round}.${key}`] = {
+        baselineValue: DEFAULT_DECISIONS[round][key],
+        bestValue: best.value,
+        bestFgv: best.fgv,
+        worstValue: worst.value,
+        worstFgv: worst.fgv,
+        span: best.fgv - worst.fgv,
+      };
+    }
+  }
+
+  return report;
+}
+
+function oneAtATimeCategories() {
+  const report: Record<string, Record<string, number>> = {};
+
+  for (const round of [1, 2, 3] as const) {
+    report[`r${round}.rnd_orientation`] = Object.fromEntries(
+      ORIENTATIONS[round].map((orientation) => {
+        const decisions = copyDefaults();
+        decisions[round].rnd_orientation = orientation;
+        return [
+          orientation,
+          simulateGame(decisions).valuation.finalGameValue,
+        ];
+      }),
+    );
+
+    report[`r${round}.resilience_policy`] = Object.fromEntries(
+      RESILIENCE.map((resilience) => {
+        const decisions = copyDefaults();
+        decisions[round].resilience_policy = resilience;
+        return [
+          resilience,
+          simulateGame(decisions).valuation.finalGameValue,
+        ];
+      }),
+    );
+  }
+
+  return report;
+}
+
+function roundOnlyDispersion() {
+  const report: Record<
+    string,
+    ReturnType<typeof summarize> & { p95MinusP05: number }
+  > = {};
+
+  for (const round of [1, 2, 3] as const) {
+    const rand = mulberry32(SEED + round * 1000);
+    const values: number[] = [];
+
+    for (let index = 0; index < ROUND_ONLY_SAMPLE_SIZE; index += 1) {
+      const decisions = copyDefaults();
+      decisions[round] = randomRoundDecision(rand, round);
+      values.push(simulateGame(decisions).valuation.finalGameValue);
+    }
+
+    const summary = summarize(values);
+    report[`round${round}`] = {
+      ...summary,
+      p95MinusP05: summary.p95 - summary.p05,
+    };
+  }
+
+  return report;
+}
+
+function topBoundaryFlags(
+  boundary: ReturnType<typeof boundaryConcentration>,
+) {
+  return Object.entries(boundary)
+    .filter(
+      ([, values]) =>
+        values.shareAtMin >= 0.50 || values.shareAtMax >= 0.50,
+    )
+    .map(([key, values]) => ({
+      key,
+      dominantBoundary:
+        values.shareAtMax >= values.shareAtMin ? "max" : "min",
+      share: Math.max(values.shareAtMin, values.shareAtMax),
+    }))
+    .sort((a, b) => b.share - a.share);
+}
+
+
+function strategySignature(
+  decisions: Record<RoundNumber, DecisionSet>,
+): string {
+  return JSON.stringify(decisions);
+}
+
+function coordinateAscent(
+  start: Record<RoundNumber, DecisionSet>,
+): {
+  decisions: Record<RoundNumber, DecisionSet>;
+  fgv: number;
+  iterations: number;
+} {
+  const decisions: Record<RoundNumber, DecisionSet> = {
+    1: { ...start[1] },
+    2: { ...start[2] },
+    3: { ...start[3] },
+  };
+  let bestFgv = simulateGame(decisions).valuation.finalGameValue;
+  let iterations = 0;
+
+  for (let sweep = 0; sweep < 12; sweep += 1) {
+    const openingFgv = bestFgv;
+
+    for (const round of [1, 2, 3] as const) {
+      for (const key of NUMERIC_KEYS) {
+        let localBestValue = decisions[round][key];
+        let localBestFgv = bestFgv;
+
+        for (const value of GRID[key]) {
+          const candidate = {
+            1: { ...decisions[1] },
+            2: { ...decisions[2] },
+            3: { ...decisions[3] },
+          };
+          setNumeric(candidate, round, key, value);
+          const fgv = simulateGame(candidate).valuation.finalGameValue;
+          if (fgv > localBestFgv + 1e-9) {
+            localBestFgv = fgv;
+            localBestValue = value;
+          }
+        }
+
+        setNumeric(decisions, round, key, localBestValue);
+        bestFgv = localBestFgv;
+      }
+
+      {
+        let localBest = decisions[round].rnd_orientation;
+        let localBestFgv = bestFgv;
+        for (const orientation of ORIENTATIONS[round]) {
+          const candidate = {
+            1: { ...decisions[1] },
+            2: { ...decisions[2] },
+            3: { ...decisions[3] },
+          };
+          candidate[round].rnd_orientation = orientation;
+          const fgv = simulateGame(candidate).valuation.finalGameValue;
+          if (fgv > localBestFgv + 1e-9) {
+            localBestFgv = fgv;
+            localBest = orientation;
+          }
+        }
+        decisions[round].rnd_orientation = localBest;
+        bestFgv = localBestFgv;
+      }
+
+      {
+        let localBest = decisions[round].resilience_policy;
+        let localBestFgv = bestFgv;
+        for (const resilience of RESILIENCE) {
+          const candidate = {
+            1: { ...decisions[1] },
+            2: { ...decisions[2] },
+            3: { ...decisions[3] },
+          };
+          candidate[round].resilience_policy = resilience;
+          const fgv = simulateGame(candidate).valuation.finalGameValue;
+          if (fgv > localBestFgv + 1e-9) {
+            localBestFgv = fgv;
+            localBest = resilience;
+          }
+        }
+        decisions[round].resilience_policy = localBest;
+        bestFgv = localBestFgv;
+      }
+    }
+
+    iterations += 1;
+    if (bestFgv <= openingFgv + 1e-9) break;
+  }
+
+  return { decisions, fgv: bestFgv, iterations };
+}
+
+function multiStartCoordinateAscent() {
+  const rand = mulberry32(SEED + 777_777);
+  const starts = 24;
+  const results = Array.from({ length: starts }, () =>
+    coordinateAscent(randomStrategy(rand)),
+  ).sort((a, b) => b.fgv - a.fgv);
+
+  const clusters = new Map<
+    string,
+    {
+      fgv: number;
+      decisions: Record<RoundNumber, DecisionSet>;
+      count: number;
+      iterations: number[];
+    }
+  >();
+
+  for (const result of results) {
+    const signature = strategySignature(result.decisions);
+    const current = clusters.get(signature);
+    if (current) {
+      current.count += 1;
+      current.iterations.push(result.iterations);
+    } else {
+      clusters.set(signature, {
+        fgv: result.fgv,
+        decisions: result.decisions,
+        count: 1,
+        iterations: [result.iterations],
+      });
+    }
+  }
+
+  const numericBoundaryShares: Record<
+    string,
+    { shareAtMin: number; shareAtMax: number }
+  > = {};
+  const categoricalShares: Record<string, Record<string, number>> = {};
+
+  for (const round of [1, 2, 3] as const) {
+    for (const key of NUMERIC_KEYS) {
+      const minValue = GRID[key][0]!;
+      const maxValue = GRID[key][GRID[key].length - 1]!;
+      const values = results.map((result) => result.decisions[round][key]);
+      numericBoundaryShares[`r${round}.${key}`] = {
+        shareAtMin:
+          values.filter((value) => Math.abs(value - minValue) < 1e-12).length /
+          values.length,
+        shareAtMax:
+          values.filter((value) => Math.abs(value - maxValue) < 1e-12).length /
+          values.length,
+      };
+    }
+
+    for (const key of ["rnd_orientation", "resilience_policy"] as const) {
+      const counts = new Map<string, number>();
+      for (const result of results) {
+        const value = result.decisions[round][key];
+        counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+      categoricalShares[`r${round}.${key}`] = Object.fromEntries(
+        [...counts.entries()].map(([value, count]) => [
+          value,
+          count / results.length,
+        ]),
+      );
+    }
+  }
+
+  return {
+    starts,
+    uniqueOptima: clusters.size,
+    best: results[0],
+    worstLocalOptimum: results[results.length - 1],
+    localOptimumFgv: summarize(results.map((result) => result.fgv)),
+    numericBoundaryShares,
+    categoricalShares,
+    topDistinct: [...clusters.values()]
+      .sort((a, b) => b.fgv - a.fgv)
+      .slice(0, 6),
+  };
+}
+
+
+function optimizeSingleRound(
+  decisions: Record<RoundNumber, DecisionSet>,
+  round: RoundNumber,
+  evaluate: (candidate: Record<RoundNumber, DecisionSet>) => number,
+): { value: number; sweeps: number } {
+  let value = evaluate(decisions);
+  let sweeps = 0;
+
+  for (let sweep = 0; sweep < 12; sweep += 1) {
+    const openingValue = value;
+
+    for (const key of NUMERIC_KEYS) {
+      let localBestValue = decisions[round][key];
+      let localBestScore = value;
+
+      for (const candidateValue of GRID[key]) {
+        const candidate = {
+          1: { ...decisions[1] },
+          2: { ...decisions[2] },
+          3: { ...decisions[3] },
+        };
+        setNumeric(candidate, round, key, candidateValue);
+        const score = evaluate(candidate);
+        if (score > localBestScore + 1e-9) {
+          localBestScore = score;
+          localBestValue = candidateValue;
+        }
+      }
+
+      setNumeric(decisions, round, key, localBestValue);
+      value = localBestScore;
+    }
+
+    {
+      let localBest = decisions[round].rnd_orientation;
+      let localBestScore = value;
+      for (const orientation of ORIENTATIONS[round]) {
+        const candidate = {
+          1: { ...decisions[1] },
+          2: { ...decisions[2] },
+          3: { ...decisions[3] },
+        };
+        candidate[round].rnd_orientation = orientation;
+        const score = evaluate(candidate);
+        if (score > localBestScore + 1e-9) {
+          localBestScore = score;
+          localBest = orientation;
+        }
+      }
+      decisions[round].rnd_orientation = localBest;
+      value = localBestScore;
+    }
+
+    {
+      let localBest = decisions[round].resilience_policy;
+      let localBestScore = value;
+      for (const resilience of RESILIENCE) {
+        const candidate = {
+          1: { ...decisions[1] },
+          2: { ...decisions[2] },
+          3: { ...decisions[3] },
+        };
+        candidate[round].resilience_policy = resilience;
+        const score = evaluate(candidate);
+        if (score > localBestScore + 1e-9) {
+          localBestScore = score;
+          localBest = resilience;
+        }
+      }
+      decisions[round].resilience_policy = localBest;
+      value = localBestScore;
+    }
+
+    sweeps += 1;
+    if (value <= openingValue + 1e-9) break;
+  }
+
+  return { value, sweeps };
+}
+
+function rollingHorizonOptimization() {
+  const decisions = copyDefaults();
+  const checkpoints: Record<string, unknown> = {};
+
+  const r1 = optimizeSingleRound(
+    decisions,
+    1,
+    (candidate) =>
+      simulateIntermediateValue(candidate, 1).valuation.finalGameValue,
+  );
+  checkpoints.round1 = {
+    decisions: { ...decisions[1] },
+    intermediateFgv: r1.value,
+    sweeps: r1.sweeps,
+  };
+
+  const r2 = optimizeSingleRound(
+    decisions,
+    2,
+    (candidate) =>
+      simulateIntermediateValue(candidate, 2).valuation.finalGameValue,
+  );
+  checkpoints.round2 = {
+    decisions: { ...decisions[2] },
+    intermediateFgv: r2.value,
+    sweeps: r2.sweeps,
+  };
+
+  const r3 = optimizeSingleRound(
+    decisions,
+    3,
+    (candidate) => simulateGame(candidate).valuation.finalGameValue,
+  );
+  checkpoints.round3 = {
+    decisions: { ...decisions[3] },
+    finalFgv: r3.value,
+    sweeps: r3.sweeps,
+  };
+
+  return {
+    decisions,
+    checkpoints,
+    finalFgv: simulateGame(decisions).valuation.finalGameValue,
+  };
+}
+
+describe("v0.5.3 candidate quantitative game-balance audit", () => {
+  it(
+    "samples the admissible strategy space and emits a deterministic audit report",
+    () => {
+      const rand = mulberry32(SEED);
+      const samples: AuditSample[] = [];
+
+      for (let index = 0; index < SAMPLE_SIZE; index += 1) {
+        samples.push(sampleStrategy(randomStrategy(rand)));
+      }
+
+      const defaultGame = simulateGame(copyDefaults());
+      const fgv = samples.map((sample) => sample.fgv);
+      const top1 = quantileCohort(samples, 0.01, true);
+      const bottom1 = quantileCohort(samples, 0.01, false);
+      const top5 = quantileCohort(samples, 0.05, true);
+      const boundary = boundaryConcentration(top1);
+
+      const report = {
+        meta: {
+          model: defaultGame.modelVersion,
+          seed: SEED,
+          sampleSize: SAMPLE_SIZE,
+          roundOnlySampleSize: ROUND_ONLY_SAMPLE_SIZE,
+        },
+        anchors: {
+          defaultFgv: defaultGame.valuation.finalGameValue,
+          defaultDistress: defaultGame.valuation.pvExpectedDistressCost,
+        },
+        randomSpace: {
+          fgv: summarize(fgv),
+          distressFrequency:
+            samples.filter((sample) => sample.distress > 1e-9).length /
+            samples.length,
+          negativeFinalNetDebtFrequency:
+            samples.filter((sample) => sample.finalNetDebt < 0).length /
+            samples.length,
+          finalNetDebt: summarize(
+            samples.map((sample) => sample.finalNetDebt),
+          ),
+          maxDistress: Math.max(
+            ...samples.map((sample) => sample.distress),
+          ),
+          maxDistressSample: [...samples]
+            .sort((a, b) => b.distress - a.distress)[0],
+          finalRevenue: summarize(
+            samples.map((sample) => sample.finalRevenue),
+          ),
+          finalEbitdaMargin: summarize(
+            samples.map((sample) => sample.finalEbitdaMargin),
+          ),
+          strategicHealth: summarize(
+            samples.map((sample) => sample.strategicHealth),
+          ),
+        },
+        correlations: numericCorrelationReport(samples),
+        categoricalMeans: categoricalMeanReport(samples),
+        top1: cohortSummary(top1),
+        top5: cohortSummary(top5),
+        bottom1: cohortSummary(bottom1),
+        top1BoundaryConcentration: boundary,
+        topBoundaryFlags: topBoundaryFlags(boundary),
+        oneAtATimeNumeric: oneAtATimeNumeric(),
+        oneAtATimeCategories: oneAtATimeCategories(),
+        roundOnlyDispersion: roundOnlyDispersion(),
+        coordinateAscent: multiStartCoordinateAscent(),
+        rollingHorizon: rollingHorizonOptimization(),
+      };
+
+      expect(samples).toHaveLength(SAMPLE_SIZE);
+      expect(fgv.every(Number.isFinite)).toBe(true);
+      expect(Number.isFinite(defaultGame.valuation.finalGameValue)).toBe(true);
+
+      console.log("BALANCE_META=" + JSON.stringify(report.meta));
+      console.log("BALANCE_ANCHORS=" + JSON.stringify(report.anchors));
+      console.log("BALANCE_RANDOM_SPACE=" + JSON.stringify(report.randomSpace));
+      console.log("BALANCE_CORRELATIONS=" + JSON.stringify(report.correlations));
+      console.log("BALANCE_CATEGORY_MEANS=" + JSON.stringify(report.categoricalMeans));
+      console.log("BALANCE_TOP1=" + JSON.stringify(report.top1));
+      console.log("BALANCE_TOP5=" + JSON.stringify(report.top5));
+      console.log("BALANCE_BOTTOM1=" + JSON.stringify(report.bottom1));
+      console.log("BALANCE_TOP_BOUNDARY_FLAGS=" + JSON.stringify(report.topBoundaryFlags));
+      console.log(
+        "BALANCE_BEST_RANDOM=" +
+          JSON.stringify(
+            [...samples].sort((a, b) => b.fgv - a.fgv)[0],
+          ),
+      );
+      console.log(
+        "BALANCE_WORST_RANDOM=" +
+          JSON.stringify(
+            [...samples].sort((a, b) => a.fgv - b.fgv)[0],
+          ),
+      );
+      console.log(
+        "BALANCE_OAT_R1=" +
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(report.oneAtATimeNumeric).filter(([key]) =>
+                key.startsWith("r1."),
+              ),
+            ),
+          ),
+      );
+      console.log(
+        "BALANCE_OAT_R2=" +
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(report.oneAtATimeNumeric).filter(([key]) =>
+                key.startsWith("r2."),
+              ),
+            ),
+          ),
+      );
+      console.log(
+        "BALANCE_OAT_R3=" +
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(report.oneAtATimeNumeric).filter(([key]) =>
+                key.startsWith("r3."),
+              ),
+            ),
+          ),
+      );
+      console.log("BALANCE_OAT_CATEGORIES=" + JSON.stringify(report.oneAtATimeCategories));
+      console.log("BALANCE_ROUND_DISPERSION=" + JSON.stringify(report.roundOnlyDispersion));
+      console.log(
+        "BALANCE_COORD_META=" +
+          JSON.stringify({
+            starts: report.coordinateAscent.starts,
+            uniqueOptima: report.coordinateAscent.uniqueOptima,
+            localOptimumFgv: report.coordinateAscent.localOptimumFgv,
+          }),
+      );
+      console.log(
+        "BALANCE_COORD_BEST=" +
+          JSON.stringify(report.coordinateAscent.best),
+      );
+      console.log(
+        "BALANCE_COORD_WORST=" +
+          JSON.stringify(report.coordinateAscent.worstLocalOptimum),
+      );
+      for (const round of [1, 2, 3] as const) {
+        console.log(
+          `BALANCE_COORD_BOUNDARY_R${round}=` +
+            JSON.stringify(
+              Object.fromEntries(
+                Object.entries(
+                  report.coordinateAscent.numericBoundaryShares,
+                ).filter(([key]) => key.startsWith(`r${round}.`)),
+              ),
+            ),
+        );
+      }
+      console.log(
+        "BALANCE_COORD_CATEGORIES=" +
+          JSON.stringify(report.coordinateAscent.categoricalShares),
+      );
+      console.log(
+        "BALANCE_ROLLING_HORIZON=" +
+          JSON.stringify(report.rollingHorizon),
+      );
+    },
+    60_000,
+  );
+});
