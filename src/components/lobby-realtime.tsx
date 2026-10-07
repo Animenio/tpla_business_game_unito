@@ -17,6 +17,27 @@ export function LobbyRealtime({
 
   useEffect(() => {
     const supabase = createClient();
+
+    const checkSessionState = async () => {
+      const { data } = await supabase
+        .from("game_sessions")
+        .select("status")
+        .eq("id", sessionId)
+        .maybeSingle();
+
+      if (data?.status === "live") {
+        router.replace("/case-study");
+        return;
+      }
+
+      if (data?.status === "completed") {
+        router.replace("/final");
+        return;
+      }
+
+      router.refresh();
+    };
+
     const channel = supabase
       .channel(`lobby:${teamId}`)
       .on(
@@ -42,16 +63,44 @@ export function LobbyRealtime({
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "UPDATE",
           schema: "public",
           table: "game_sessions",
           filter: `id=eq.${sessionId}`,
         },
-        () => router.refresh(),
+        (payload) => {
+          const status = String(payload.new.status ?? "");
+
+          if (status === "live") {
+            router.replace("/case-study");
+            return;
+          }
+
+          if (status === "completed") {
+            router.replace("/final");
+            return;
+          }
+
+          router.refresh();
+        },
       )
       .subscribe();
 
+    void checkSessionState();
+
+    const interval = window.setInterval(() => {
+      void checkSessionState();
+    }, 10000);
+
+    const onFocus = () => {
+      void checkSessionState();
+    };
+
+    window.addEventListener("focus", onFocus);
+
     return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
       void supabase.removeChannel(channel);
     };
   }, [router, sessionId, teamId]);
