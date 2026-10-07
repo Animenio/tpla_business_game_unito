@@ -34,6 +34,8 @@ function teacherError(message: string) {
       return "Non è presente alcun team da avviare.";
     case "INVALID_SESSION_TRANSITION":
       return "Transizione di stato non consentita.";
+    case "SESSION_NOT_RESTARTABLE":
+      return "La simulazione può essere riavviata solo quando è già in corso o completata.";
     default:
       return "Operazione non completata. Riprova.";
   }
@@ -84,5 +86,30 @@ export async function setSessionStatusAction(formData: FormData) {
 
   revalidatePath("/teacher");
   revalidatePath("/lobby");
+  redirect("/teacher");
+}
+
+
+export async function restartSimulationAction(formData: FormData) {
+  const sessionId = value(formData, "session_id");
+
+  if (!sessionId) {
+    redirect(withError("Sessione non valida."));
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("teacher_restart_simulation", {
+    p_session_id: sessionId,
+  });
+
+  if (error) {
+    redirect(withError(teacherError(error.message)));
+  }
+
+  revalidatePath("/teacher");
+  revalidatePath("/lobby");
+  revalidatePath("/case-study");
+  revalidatePath("/rounds", "layout");
+  revalidatePath("/final");
   redirect("/teacher");
 }
