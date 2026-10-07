@@ -210,9 +210,12 @@ export default async function AdminSessionsPage({
               </div>
               <label>
                 <span>World Model</span>
-                <select defaultValue="aurora-tyres-v0.4" name="model_version">
+                <select defaultValue="aurora-tyres-v0.5.2" name="model_version">
                   <option value="aurora-tyres-v0.4">
-                    Aurora Tyres v0.4
+                    Aurora Tyres v0.4 — legacy
+                  </option>
+                  <option value="aurora-tyres-v0.5.2">
+                    Aurora Tyres v0.5.2 — calibrato
                   </option>
                 </select>
               </label>

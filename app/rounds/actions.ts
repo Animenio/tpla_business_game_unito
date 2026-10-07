@@ -9,10 +9,21 @@ import {
   type RoundObjective,
 } from "@/src/domain/game/round-content";
 import {
-  type DecisionSet,
+  type DecisionSet as V04DecisionSet,
   type RoundNumber,
 } from "@/src/domain/simulation/v04/spec";
 import { validateStudentDecisionSet } from "@/src/domain/simulation/v04/validation";
+import {
+  MODEL_VERSION as V05_MODEL_VERSION,
+  type DecisionSet as V05DecisionSet,
+  type ResiliencePolicy,
+  type RndOrientation,
+} from "@/src/domain/simulation/v05/spec";
+import {
+  decisionToStoredRow,
+  type StoredDecisionRow,
+} from "@/src/domain/simulation/v05/storage";
+import { validateDecisionSet as validateV05DecisionSet } from "@/src/domain/simulation/v05/validation";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -42,7 +53,7 @@ function parseObjective(formData: FormData): RoundObjective | null {
     : null;
 }
 
-function parseDecisionSet(formData: FormData): DecisionSet {
+function parseV04DecisionSet(formData: FormData): V04DecisionSet {
   return {
     hv_price_change: asRatio(formData, "hv_price_change"),
     std_price_change: asRatio(formData, "std_price_change"),
@@ -59,6 +70,30 @@ function parseDecisionSet(formData: FormData): DecisionSet {
   };
 }
 
+function parseV05DecisionSet(formData: FormData): V05DecisionSet {
+  return {
+    premium_price_positioning: asRatio(
+      formData,
+      "premium_price_positioning",
+    ),
+    standard_price_positioning: asRatio(
+      formData,
+      "standard_price_positioning",
+    ),
+    marketing_change: asRatio(formData, "marketing_change"),
+    rnd_pct: asRatio(formData, "rnd_pct"),
+    rnd_orientation: value(
+      formData,
+      "rnd_orientation",
+    ) as RndOrientation,
+    capex_pct: asRatio(formData, "capex_pct"),
+    resilience_policy: value(
+      formData,
+      "resilience_policy",
+    ) as ResiliencePolicy,
+  };
+}
+
 export async function reviewDecisionsAction(formData: FormData) {
   const roundValue = Number(value(formData, "round_number"));
   let round: RoundNumber;
@@ -71,24 +106,18 @@ export async function reviewDecisionsAction(formData: FormData) {
 
   const roundId = value(formData, "round_id");
   const objective = parseObjective(formData);
-  const decisions = parseDecisionSet(formData);
 
   if (!objective) {
-    redirect(decisionError(round, "Seleziona l’obiettivo principale del round."));
-  }
-
-  const validation = validateStudentDecisionSet(decisions);
-
-  if (!validation.valid) {
     redirect(
       decisionError(
         round,
-        validation.errors.map((error) => error.message).join(" "),
+        "Seleziona l’obiettivo principale del round.",
       ),
     );
   }
 
-  const { supabase, session, team } = await requireStudentGameContext();
+  const { supabase, session, team } =
+    await requireStudentGameContext();
 
   const { data: gameRound } = await supabase
     .from("game_rounds")
@@ -106,21 +135,68 @@ export async function reviewDecisionsAction(formData: FormData) {
     gameRound.closes_at &&
     new Date(gameRound.closes_at).getTime() < Date.now()
   ) {
-    redirect(decisionError(round, "La finestra decisionale è scaduta."));
+    redirect(
+      decisionError(
+        round,
+        "La finestra decisionale è scaduta.",
+      ),
+    );
   }
 
-  const { error } = await supabase.from("team_round_decisions").upsert(
-    {
-      round_id: gameRound.id,
-      team_id: team.id,
-      objective,
-      ...decisions,
-      status: "draft",
-      submitted_at: null,
-      submitted_by: null,
-    },
-    { onConflict: "round_id,team_id" },
-  );
+  let storedDecisions: StoredDecisionRow;
+
+  if (session.model_version === V05_MODEL_VERSION) {
+    const decisions = parseV05DecisionSet(formData);
+    const validation = validateV05DecisionSet(
+      decisions,
+      round,
+    );
+
+    if (!validation.valid) {
+      redirect(
+        decisionError(
+          round,
+          validation.errors
+            .map((error) => error.message)
+            .join(" "),
+        ),
+      );
+    }
+
+    storedDecisions = decisionToStoredRow(decisions);
+  } else {
+    const decisions = parseV04DecisionSet(formData);
+    const validation =
+      validateStudentDecisionSet(decisions);
+
+    if (!validation.valid) {
+      redirect(
+        decisionError(
+          round,
+          validation.errors
+            .map((error) => error.message)
+            .join(" "),
+        ),
+      );
+    }
+
+    storedDecisions = decisions;
+  }
+
+  const { error } = await supabase
+    .from("team_round_decisions")
+    .upsert(
+      {
+        round_id: gameRound.id,
+        team_id: team.id,
+        objective,
+        ...storedDecisions,
+        status: "draft",
+        submitted_at: null,
+        submitted_by: null,
+      },
+      { onConflict: "round_id,team_id" },
+    );
 
   if (error) {
     redirect(
@@ -158,7 +234,8 @@ export async function submitDecisionsAction(formData: FormData) {
     );
   }
 
-  const { supabase, session } = await requireStudentGameContext();
+  const { supabase, session } =
+    await requireStudentGameContext();
 
   const { data: gameRound } = await supabase
     .from("game_rounds")
@@ -172,14 +249,21 @@ export async function submitDecisionsAction(formData: FormData) {
     redirect(reviewError(round, "Round non trovato."));
   }
 
-  const { error } = await supabase.rpc("submit_team_round_decision", {
-    p_round_id: roundId,
-  });
+  const { error } = await supabase.rpc(
+    "submit_team_round_decision",
+    {
+      p_round_id: roundId,
+    },
+  );
 
   if (error) {
-    const message = error.message.includes("ROUND_NOT_OPEN")
+    const message = error.message.includes(
+      "ROUND_NOT_OPEN",
+    )
       ? "Il round non è più aperto."
-      : error.message.includes("DECISIONS_NOT_FOUND")
+      : error.message.includes(
+            "DECISIONS_NOT_FOUND",
+          )
         ? "Non esiste una bozza da inviare."
         : "Invio non completato. Riprova.";
     redirect(reviewError(round, message));

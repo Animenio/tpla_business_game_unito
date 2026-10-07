@@ -9,6 +9,11 @@ import {
   roundNumber,
 } from "@/src/domain/game/round-content";
 import { requireStudentGameContext } from "@/src/lib/game/context";
+import { MODEL_VERSION as V05_MODEL_VERSION } from "@/src/domain/simulation/v05/spec";
+import {
+  orientationLabel,
+  resilienceLabel,
+} from "@/src/domain/simulation/v05/storage";
 
 interface ReviewPageProps {
   params: Promise<{ round: string }>;
@@ -73,38 +78,76 @@ export default async function ReviewPage({
   const search = await searchParams;
   const error = param(search.error);
 
-  const groups = [
-    {
-      title: "MERCATO",
-      items: [
-        ["Prezzo premium", percent(decision.hv_price_change)],
-        ["Prezzo standard", percent(decision.std_price_change)],
-        ["Marketing", percent(decision.marketing_change)],
-      ],
-    },
-    {
-      title: "INNOVAZIONE E INVESTIMENTI",
-      items: [
-        ["R&S / Ricavi", percent(decision.rnd_pct, 1).replace("+", "")],
-        [
-          "R&S pneumatici connessi",
-          percent(decision.connected_rnd_allocation).replace("+", ""),
-        ],
-        ["Investimenti / Ricavi", percent(decision.capex_pct, 1).replace("+", "")],
-      ],
-    },
-    {
-      title: "CASSA E RISCHIO",
-      items: [
-        ["Scorte di magazzino", `${decision.inventory_days} gg`],
-        ["Tempo medio di incasso", `${decision.receivable_days} gg`],
-        [
-          "Copertura costo gomma",
-          percent(decision.natural_rubber_hedge).replace("+", ""),
-        ],
-      ],
-    },
-  ];
+  const isV05 = session.model_version === V05_MODEL_VERSION;
+  const groups = isV05
+    ? [
+        {
+          title: "MERCATO",
+          items: [
+            ["Prezzo Premium vs mercato", percent(decision.hv_price_change)],
+            ["Prezzo Standard vs mercato", percent(decision.std_price_change)],
+            ["Marketing", percent(decision.marketing_change)],
+          ],
+        },
+        {
+          title: "INNOVAZIONE E INVESTIMENTI",
+          items: [
+            ["R&S / Ricavi", percent(decision.rnd_pct, 1).replace("+", "")],
+            [
+              "Orientamento R&S",
+              orientationLabel(
+                Number(decision.connected_rnd_allocation),
+                round,
+              ),
+            ],
+            ["Investimenti / Ricavi", percent(decision.capex_pct, 1).replace("+", "")],
+          ],
+        },
+        {
+          title: "RESILIENZA",
+          items: [
+            [
+              "Politica supply chain",
+              resilienceLabel(
+                Number(decision.inventory_days),
+                Number(decision.natural_rubber_hedge),
+              ),
+            ],
+          ],
+        },
+      ]
+    : [
+        {
+          title: "MERCATO",
+          items: [
+            ["Prezzo premium", percent(decision.hv_price_change)],
+            ["Prezzo standard", percent(decision.std_price_change)],
+            ["Marketing", percent(decision.marketing_change)],
+          ],
+        },
+        {
+          title: "INNOVAZIONE E INVESTIMENTI",
+          items: [
+            ["R&S / Ricavi", percent(decision.rnd_pct, 1).replace("+", "")],
+            [
+              "R&S pneumatici connessi",
+              percent(decision.connected_rnd_allocation).replace("+", ""),
+            ],
+            ["Investimenti / Ricavi", percent(decision.capex_pct, 1).replace("+", "")],
+          ],
+        },
+        {
+          title: "CASSA E RISCHIO",
+          items: [
+            ["Scorte di magazzino", `${decision.inventory_days} gg`],
+            ["Tempo medio di incasso", `${decision.receivable_days} gg`],
+            [
+              "Copertura costo gomma",
+              percent(decision.natural_rubber_hedge).replace("+", ""),
+            ],
+          ],
+        },
+      ];
 
   return (
     <main className="application-page">

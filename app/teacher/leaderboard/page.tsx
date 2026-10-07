@@ -81,7 +81,7 @@ export default async function TeacherLeaderboardPage({
             <div className="card-eyebrow">RISULTATI FINALI</div>
             <h1>Leaderboard — {session.code}</h1>
             <p>
-              Valore finale prodotto dal World Model v0.4 e stato della
+              Valore finale prodotto dal World Model {session.model_version.replace("aurora-tyres-", "")} e stato della
               documentazione AI richiesta ai team.
             </p>
           </div>
