@@ -148,10 +148,11 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
     netDebtDelta <= 0
       ? ` La posizione finanziaria è migliorata di ${moneyBn(Math.abs(netDebtDelta))} rispetto al 2025.`
       : ` Il debito netto è aumentato di ${moneyBn(Math.abs(netDebtDelta))} rispetto al 2025.`;
+  const premiumMove = `${Math.abs(premiumDelta * 100).toFixed(1)} pp`;
   const mixSignal =
     premiumDelta >= 0
-      ? `La quota di ricavi Premium è salita di ${pp(premiumDelta)} rispetto al 2025.`
-      : `La quota di ricavi Premium è scesa di ${pp(Math.abs(premiumDelta))} rispetto al 2025.`;
+      ? `La quota di ricavi Premium è salita di ${premiumMove} rispetto al 2025.`
+      : `La quota di ricavi Premium è scesa di ${premiumMove} rispetto al 2025.`;
   const strategicSignal =
     result.strategic_health >= 1
       ? `L’indice di solidità strategica è ${result.strategic_health.toFixed(2)}x, sopra il riferimento iniziale 1,00x.`
