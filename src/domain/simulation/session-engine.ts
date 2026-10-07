@@ -5,9 +5,10 @@ import {
   type OpeningState as V04OpeningState,
   type RoundResult as V04RoundResult,
 } from "@/src/domain/simulation/v04/engine";
-import type {
-  DecisionSet as V04DecisionSet,
-  RoundNumber,
+import {
+  MODEL_VERSION as V04_MODEL_VERSION,
+  type DecisionSet as V04DecisionSet,
+  type RoundNumber,
 } from "@/src/domain/simulation/v04/spec";
 import {
   createOpeningState as createV05OpeningState,
@@ -61,7 +62,13 @@ export interface NormalizedGameResult {
 }
 
 export function usesV05(modelVersion: string): boolean {
-  return modelVersion === V05_MODEL_VERSION;
+  if (modelVersion === V05_MODEL_VERSION) {
+    return true;
+  }
+  if (modelVersion === V04_MODEL_VERSION) {
+    return false;
+  }
+  throw new Error(`UNSUPPORTED_MODEL_VERSION:${modelVersion}`);
 }
 
 function v04Decision(row: StoredDecisionRow): V04DecisionSet {
