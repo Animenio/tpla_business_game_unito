@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/src/types/database";
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  let response = NextResponse.next({
+    request,
+  });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey =
@@ -26,7 +28,9 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value);
           });
 
-          response = NextResponse.next({ request });
+          response = NextResponse.next({
+            request,
+          });
 
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
@@ -36,6 +40,10 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  await supabase.auth.getUser();
+  // Validate and, when needed, rotate the cookie-backed session before
+  // Server Components read it. This keeps the request and browser cookies
+  // synchronized across hard refreshes and navigation.
+  await supabase.auth.getClaims();
+
   return response;
 }
