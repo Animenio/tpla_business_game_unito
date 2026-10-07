@@ -19,7 +19,10 @@ import {
   type ResiliencePolicy,
   type RndOrientation,
 } from "@/src/domain/simulation/v05/spec";
-import { decisionToStoredRow } from "@/src/domain/simulation/v05/storage";
+import {
+  decisionToStoredRow,
+  type StoredDecisionRow,
+} from "@/src/domain/simulation/v05/storage";
 import { validateDecisionSet as validateV05DecisionSet } from "@/src/domain/simulation/v05/validation";
 
 function value(formData: FormData, key: string) {
@@ -140,7 +143,7 @@ export async function reviewDecisionsAction(formData: FormData) {
     );
   }
 
-  let storedDecisions: Record<string, number>;
+  let storedDecisions: StoredDecisionRow;
 
   if (session.model_version === V05_MODEL_VERSION) {
     const decisions = parseV05DecisionSet(formData);
