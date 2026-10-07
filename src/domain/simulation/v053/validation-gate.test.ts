@@ -101,10 +101,8 @@ function maxUpdate(current: number, value: number): number {
   return Math.max(current, value);
 }
 
-function assertFinite(values: readonly number[]): void {
-  for (const value of values) {
-    expect(Number.isFinite(value)).toBe(true);
-  }
+function allFinite(values: readonly number[]): boolean {
+  return values.every(Number.isFinite);
 }
 
 describe("Aurora Tyres v0.5.3 RC1 final validation gate", () => {
@@ -136,24 +134,28 @@ describe("Aurora Tyres v0.5.3 RC1 final validation gate", () => {
       let maxNetDebt = Number.NEGATIVE_INFINITY;
       let maxAbsBalanceCheck = 0;
       let distressCount = 0;
+      let violations = 0;
 
       for (let index = 0; index < SAMPLE_SIZE; index += 1) {
         const game = simulateGame(randomStrategy(rand));
 
-        assertFinite([
-          game.valuation.finalGameValue,
-          game.valuation.enterpriseValue,
-          game.valuation.impliedEquityValue,
-          game.valuation.pvExplicitUfcf,
-          game.valuation.pvExpectedDistressCost,
-          game.terminal.terminalValue,
-          game.terminal.pvTerminalValue,
-        ]);
-
-        expect(game.valuation.finalGameValue).toBeGreaterThan(0);
-        expect(game.valuation.enterpriseValue).toBeGreaterThan(0);
-        expect(game.terminal.terminalValue).toBeGreaterThan(0);
-        expect(game.valuation.pvExpectedDistressCost).toBeGreaterThanOrEqual(0);
+        if (
+          !allFinite([
+            game.valuation.finalGameValue,
+            game.valuation.enterpriseValue,
+            game.valuation.impliedEquityValue,
+            game.valuation.pvExplicitUfcf,
+            game.valuation.pvExpectedDistressCost,
+            game.terminal.terminalValue,
+            game.terminal.pvTerminalValue,
+          ]) ||
+          game.valuation.finalGameValue <= 0 ||
+          game.valuation.enterpriseValue <= 0 ||
+          game.terminal.terminalValue <= 0 ||
+          game.valuation.pvExpectedDistressCost < 0
+        ) {
+          violations += 1;
+        }
 
         minFgv = minUpdate(minFgv, game.valuation.finalGameValue);
         maxFgv = maxUpdate(maxFgv, game.valuation.finalGameValue);
@@ -166,7 +168,7 @@ describe("Aurora Tyres v0.5.3 RC1 final validation gate", () => {
         for (const year of [2026, 2027, 2028, 2029, 2030, 2031] as const) {
           const annual = game.annual[year];
 
-          assertFinite([
+          const annualFinite = allFinite([
             annual.totalRevenue,
             annual.adjustedEbitda,
             annual.adjustedEbitdaMargin,
@@ -186,31 +188,35 @@ describe("Aurora Tyres v0.5.3 RC1 final validation gate", () => {
             annual.competitivePosition,
           ]);
 
-          expect(annual.totalRevenue).toBeGreaterThan(0);
-          expect(annual.premiumRevenue).toBeGreaterThanOrEqual(0);
-          expect(annual.standardRevenue).toBeGreaterThanOrEqual(0);
-          expect(annual.premiumRevenueShare).toBeGreaterThanOrEqual(0);
-          expect(annual.premiumRevenueShare).toBeLessThanOrEqual(1);
-          expect(annual.serviceFactor).toBeGreaterThan(0);
-          expect(annual.serviceFactor).toBeLessThanOrEqual(1 + 1e-12);
-          expect(annual.stockAvailability).toBeGreaterThanOrEqual(0.8 - 1e-12);
-          expect(annual.stockAvailability).toBeLessThanOrEqual(1 + 1e-12);
-          expect(annual.assetReliability).toBeGreaterThanOrEqual(0.88 - 1e-12);
-          expect(annual.assetReliability).toBeLessThanOrEqual(1 + 1e-12);
-          expect(annual.expectedDistressCost).toBeGreaterThanOrEqual(0);
-          expect(annual.fixedAssets).toBeGreaterThan(0);
-          expect(annual.equity).toBeGreaterThan(0);
-          expect(annual.closingInnovation).toBeGreaterThanOrEqual(0.6 - 1e-12);
-          expect(annual.closingInnovation).toBeLessThanOrEqual(1.45 + 1e-12);
-          expect(annual.closingBrand).toBeGreaterThanOrEqual(0.65 - 1e-12);
-          expect(annual.closingBrand).toBeLessThanOrEqual(1.4 + 1e-12);
-          expect(annual.closingDigital).toBeGreaterThanOrEqual(0.65 - 1e-12);
-          expect(annual.closingDigital).toBeLessThanOrEqual(1.5 + 1e-12);
-          expect(annual.closingAssetHealth).toBeGreaterThanOrEqual(0.7 - 1e-12);
-          expect(annual.closingAssetHealth).toBeLessThanOrEqual(1.3 + 1e-12);
-          expect(annual.competitivePosition).toBeGreaterThanOrEqual(0.65 - 1e-12);
-          expect(annual.competitivePosition).toBeLessThanOrEqual(1.4 + 1e-12);
-          expect(Math.abs(annual.balanceCheck)).toBeLessThan(1e-8);
+          const annualValid =
+            annualFinite &&
+            annual.totalRevenue > 0 &&
+            annual.premiumRevenue >= 0 &&
+            annual.standardRevenue >= 0 &&
+            annual.premiumRevenueShare >= 0 &&
+            annual.premiumRevenueShare <= 1 &&
+            annual.serviceFactor > 0 &&
+            annual.serviceFactor <= 1 + 1e-12 &&
+            annual.stockAvailability >= 0.8 - 1e-12 &&
+            annual.stockAvailability <= 1 + 1e-12 &&
+            annual.assetReliability >= 0.88 - 1e-12 &&
+            annual.assetReliability <= 1 + 1e-12 &&
+            annual.expectedDistressCost >= 0 &&
+            annual.fixedAssets > 0 &&
+            annual.equity > 0 &&
+            annual.closingInnovation >= 0.6 - 1e-12 &&
+            annual.closingInnovation <= 1.45 + 1e-12 &&
+            annual.closingBrand >= 0.65 - 1e-12 &&
+            annual.closingBrand <= 1.4 + 1e-12 &&
+            annual.closingDigital >= 0.65 - 1e-12 &&
+            annual.closingDigital <= 1.5 + 1e-12 &&
+            annual.closingAssetHealth >= 0.7 - 1e-12 &&
+            annual.closingAssetHealth <= 1.3 + 1e-12 &&
+            annual.competitivePosition >= 0.65 - 1e-12 &&
+            annual.competitivePosition <= 1.4 + 1e-12 &&
+            Math.abs(annual.balanceCheck) < 1e-8;
+
+          if (!annualValid) violations += 1;
 
           minRevenue = minUpdate(minRevenue, annual.totalRevenue);
           minEbitda = minUpdate(minEbitda, annual.adjustedEbitda);
@@ -237,6 +243,7 @@ describe("Aurora Tyres v0.5.3 RC1 final validation gate", () => {
       const report = {
         sampleSize: SAMPLE_SIZE,
         seed: SEED,
+        violations,
         fgv: { min: minFgv, max: maxFgv },
         annual: {
           minRevenue,
@@ -269,6 +276,7 @@ describe("Aurora Tyres v0.5.3 RC1 final validation gate", () => {
       };
 
       console.log("V053_VALIDATION_STRESS=" + JSON.stringify(report));
+      expect(violations).toBe(0);
     },
     60_000,
   );
