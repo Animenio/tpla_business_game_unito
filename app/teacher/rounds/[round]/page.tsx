@@ -218,7 +218,7 @@ export default async function TeacherRoundPage({
               {gameRound.status === "open" ? "TEMPO RIMASTO" : "ROUND CHIUSO"}
             </span>
             {gameRound.status === "open" ? (
-              <RoundTimer closesAt={gameRound.closes_at} />
+              <RoundTimer closesAt={gameRound.closes_at} roundId={gameRound.id} />
             ) : (
               <strong>FINAL</strong>
             )}
