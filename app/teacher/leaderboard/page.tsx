@@ -6,6 +6,7 @@ import {
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { RestartSimulationControl } from "@/src/components/restart-simulation-control";
+import { TeacherRealtime } from "@/src/components/teacher-realtime";
 import { requireTeacherGameContext } from "@/src/lib/game/context";
 
 interface TeacherLeaderboardProps {
