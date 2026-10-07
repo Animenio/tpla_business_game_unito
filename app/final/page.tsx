@@ -2,7 +2,16 @@ import { redirect } from "next/navigation";
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { objectiveLabel } from "@/src/domain/game/round-content";
-import { BASELINE_2025 } from "@/src/domain/simulation/v04/spec";
+import { BASELINE_2025 as BASELINE_V04 } from "@/src/domain/simulation/v04/spec";
+import {
+  BASELINE_2025 as BASELINE_V05,
+  MODEL_VERSION as V05_MODEL_VERSION,
+  type RoundNumber,
+} from "@/src/domain/simulation/v05/spec";
+import {
+  orientationLabel,
+  resilienceLabel,
+} from "@/src/domain/simulation/v05/storage";
 import { requireStudentGameContext } from "@/src/lib/game/context";
 
 function moneyBn(value: number) {
@@ -24,15 +33,29 @@ function pp(value: number) {
   return `${points >= 0 ? "+" : "−"}${Math.abs(points).toFixed(1)} pp`;
 }
 
-function decisionSummary(row: {
-  hv_price_change: number;
-  std_price_change: number;
-  rnd_pct: number;
-  capex_pct: number;
-  inventory_days: number;
-  natural_rubber_hedge: number;
-  connected_rnd_allocation: number;
-}) {
+function decisionSummary(
+  row: {
+    hv_price_change: number;
+    std_price_change: number;
+    rnd_pct: number;
+    capex_pct: number;
+    inventory_days: number;
+    natural_rubber_hedge: number;
+    connected_rnd_allocation: number;
+  },
+  round: RoundNumber,
+  isV05: boolean,
+) {
+  if (isV05) {
+    return [
+      `Premium vs mercato ${signedPercent(Number(row.hv_price_change))}`,
+      `Standard vs mercato ${signedPercent(Number(row.std_price_change))}`,
+      `R&S ${percent(Number(row.rnd_pct))} (${orientationLabel(Number(row.connected_rnd_allocation), round)})`,
+      `CapEx ${percent(Number(row.capex_pct))}`,
+      `Resilienza ${resilienceLabel(Number(row.inventory_days), Number(row.natural_rubber_hedge))}`,
+    ].join(" · ");
+  }
+
   return [
     `Premium ${signedPercent(Number(row.hv_price_change))}`,
     `Standard ${signedPercent(Number(row.std_price_change))}`,
@@ -97,6 +120,20 @@ export default async function FinalPage() {
     (decisions ?? []).map((decision) => [decision.round_id, decision]),
   );
 
+  const isV05 = session.model_version === V05_MODEL_VERSION;
+  const baseline = isV05
+    ? {
+        revenue: BASELINE_V05.revenue,
+        adjustedEbitdaMargin:
+          BASELINE_V05.adjusted_ebitda / BASELINE_V05.revenue,
+        premiumShare: BASELINE_V05.premium_share,
+      }
+    : {
+        revenue: BASELINE_V04.revenue,
+        adjustedEbitdaMargin: BASELINE_V04.adjusted_ebitda_margin,
+        premiumShare: BASELINE_V04.premium_share,
+      };
+
   const benchmark = benchmarkRows?.[0];
   const rank = benchmark?.own_rank ?? null;
   const totalTeams = benchmark?.total_teams ?? null;
@@ -105,12 +142,12 @@ export default async function FinalPage() {
     median > 0 ? Number(finalScore.final_game_value) / median - 1 : null;
 
   const revenueDelta =
-    Number(finalScore.final_revenue) / BASELINE_2025.revenue - 1;
+    Number(finalScore.final_revenue) / baseline.revenue - 1;
   const ebitdaDelta =
     Number(finalScore.final_ebitda_margin) -
-    BASELINE_2025.adjusted_ebitda_margin;
+    baseline.adjustedEbitdaMargin;
   const premiumDelta =
-    Number(finalScore.final_premium_share) - BASELINE_2025.premium_share;
+    Number(finalScore.final_premium_share) - baseline.premiumShare;
 
   const netDebt = Number(finalScore.final_net_debt);
   const aiDone = Boolean(aiSubmission);
@@ -215,7 +252,11 @@ export default async function FinalPage() {
                     </div>
                     <p>
                       {decision
-                        ? decisionSummary(decision)
+                        ? decisionSummary(
+                            decision,
+                            round.round_number as RoundNumber,
+                            isV05,
+                          )
                         : "Decisioni non disponibili."}
                     </p>
                     <small>
