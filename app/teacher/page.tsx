@@ -3,6 +3,7 @@ import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
 import { TeacherRealtime } from "@/src/components/teacher-realtime";
 import { TeacherRoundControls } from "@/src/components/teacher-round-controls";
+import { RestartSimulationControl } from "@/src/components/restart-simulation-control";
 import { requireTeacherGameContext } from "@/src/lib/game/context";
 import {
   setSessionStatusAction,
@@ -309,6 +310,25 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
             Per avviare: conferma tutti i team e assegna tutti gli studenti a un
             gruppo.
           </div>
+        ) : null}
+
+        {session.status === "live" ? (
+          <section className="teacher-restart-card">
+            <div>
+              <div className="card-eyebrow">RIAVVIO SIMULAZIONE</div>
+              <h2>Riparti dall’inizio mantenendo classe e team</h2>
+              <p>
+                Azzera decisioni, risultati e output finali della run corrente.
+                Mantiene studenti, composizione dei team e materiali della Data
+                Room. Tutti gli studenti vengono riportati alla lobby pre-avvio
+                e la sessione torna pronta per un nuovo Avvia simulazione.
+              </p>
+            </div>
+            <RestartSimulationControl
+              sessionCode={session.code}
+              sessionId={session.id}
+            />
+          </section>
         ) : null}
 
         <TeacherRoundControls
