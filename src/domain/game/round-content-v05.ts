@@ -15,11 +15,11 @@ export const V05_DECISION_HELP: Record<keyof DecisionSet, string> = {
   rnd_pct:
     "Quota dei ricavi destinata a R&S. La spesa alimenta innovazione e digitale in funzione dell’orientamento scelto.",
   rnd_orientation:
-    "Ripartisce la R&S tra core tyre e capacità digitali: Core 10% connected, Bilanciato 30%, Connected 50%. Connected non è disponibile nel Round 1.",
+    "Definisce come viene ripartito il budget R&S già scelto. Core concentra la ricerca sul prodotto pneumatico tradizionale e dedica il 10% al connected; Bilanciato dedica il 30% al connected; Connected dedica il 50% a dati, sensori e capacità digitali. Connected è disponibile dal Round 2.",
   capex_pct:
     "Quota dei ricavi destinata agli investimenti. La capacità aggiuntiva entra con un anno di ritardo e il CapEx assorbe cassa oggi.",
   resilience_policy:
-    "Politica congiunta di scorte e copertura della gomma: Snella = 125 gg / 0%; Standard = 140 gg / 30%; Robusta = 160 gg / 70%.",
+    "Combina scorte e copertura della gomma. Snella usa meno capitale ma lascia più esposizione agli shock; Standard cerca un equilibrio; Robusta aumenta protezione e continuità operativa, ma immobilizza più capitale.",
 };
 
 export const V05_DECISION_BASELINE_CONTEXT: Record<keyof DecisionSet, string> = {
@@ -77,6 +77,37 @@ export function v05OrientationOptions(round: RoundNumber) {
     : (["Core", "Bilanciato", "Connected"] as const);
 }
 
+
+
+export const V05_ORIENTATION_LABELS = {
+  Core: "Core — focus prodotto",
+  Bilanciato: "Bilanciato — equilibrio prodotto/digitale",
+  Connected: "Connected — focus digitale e connected tyre",
+} as const;
+
+export const V05_ORIENTATION_GUIDE = {
+  Core:
+    "90% della R&S sul core tyre e 10% sul connected. Privilegia prodotto, processo e tecnologia pneumatico.",
+  Bilanciato:
+    "70% della R&S sul core tyre e 30% sul connected. Mantiene equilibrio tra prodotto tradizionale e capacità digitali.",
+  Connected:
+    "50% della R&S sul core tyre e 50% sul connected. Aumenta il focus su sensori, dati e servizi digitali; disponibile dal Round 2.",
+} as const;
+
+export const V05_RESILIENCE_LABELS = {
+  Snella: "Snella — meno capitale, più esposizione",
+  Standard: "Standard — equilibrio",
+  Robusta: "Robusta — più protezione, più capitale",
+} as const;
+
+export const V05_RESILIENCE_GUIDE = {
+  Snella:
+    "125 giorni di scorte e 0% di hedge. Riduce capitale immobilizzato, ma lascia maggiore esposizione a shock di fornitura e commodity.",
+  Standard:
+    "140 giorni di scorte e 30% di hedge. Compromesso tra continuità operativa, costo della protezione e capitale circolante.",
+  Robusta:
+    "160 giorni di scorte e 70% di hedge. Aumenta protezione e continuità, ma assorbe più capitale e può avere un costo maggiore.",
+} as const;
 
 export const V05_DECISION_COUNT = 6;
 
