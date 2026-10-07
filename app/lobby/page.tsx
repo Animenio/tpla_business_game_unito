@@ -105,6 +105,10 @@ export default async function LobbyPage({
     redirect("/case-study");
   }
 
+  if (session.status === "completed") {
+    redirect("/final");
+  }
+
   const { data: memberRows } = await supabase
     .from("team_members")
     .select("user_id, joined_at")
@@ -133,7 +137,7 @@ export default async function LobbyPage({
 
   const params = await searchParams;
   const error = param(params.error);
-  const waiting = session.status !== "completed";
+  const waiting = true;
   const membershipEditable =
     session.status === "registration_open" && team.status === "forming";
 
