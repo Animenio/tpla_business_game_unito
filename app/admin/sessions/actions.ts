@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/server";
 import { SELECTED_SESSION_COOKIE } from "@/src/lib/game/context";
+import { DEFAULT_MODEL_VERSION } from "@/src/domain/simulation/model-version";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -48,7 +49,8 @@ export async function createSessionAction(formData: FormData) {
   const code = value(formData, "code").toUpperCase();
   const title = value(formData, "title");
   const academicYear = value(formData, "academic_year");
-  const modelVersion = value(formData, "model_version") || "aurora-tyres-v0.5.2";
+  const modelVersion =
+    value(formData, "model_version") || DEFAULT_MODEL_VERSION;
   const isTest = value(formData, "session_type") === "test";
 
   const supabase = await createClient();
