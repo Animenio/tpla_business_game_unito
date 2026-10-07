@@ -117,7 +117,9 @@ export default async function Home({ searchParams }: HomeProps) {
               </button>
               <p className="privacy-copy">
                 I tuoi dati saranno utilizzati esclusivamente per la gestione
-                della simulazione e del report finale.
+                della simulazione e del report finale. I docenti autorizzati
+                dall’amministratore vengono riconosciuti automaticamente
+                tramite email UniTo.
               </p>
             </form>
           ) : (
