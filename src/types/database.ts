@@ -70,7 +70,9 @@ export type Database = {
       game_sessions: {
         Row: {
           academic_year: string | null
+          ai_submission_form_url: string | null
           code: string
+          completed_at: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -83,7 +85,9 @@ export type Database = {
         }
         Insert: {
           academic_year?: string | null
+          ai_submission_form_url?: string | null
           code: string
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -96,7 +100,9 @@ export type Database = {
         }
         Update: {
           academic_year?: string | null
+          ai_submission_form_url?: string | null
           code?: string
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -269,6 +275,158 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_ai_submissions: {
+        Row: {
+          confirmed_cleaned: boolean
+          external_reference_url: string | null
+          id: string
+          provider: string
+          session_id: string
+          status: Database["public"]["Enums"]["ai_submission_status"]
+          submitted_at: string
+          submitted_by: string
+          team_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          confirmed_cleaned?: boolean
+          external_reference_url?: string | null
+          id?: string
+          provider: string
+          session_id: string
+          status?: Database["public"]["Enums"]["ai_submission_status"]
+          submitted_at?: string
+          submitted_by: string
+          team_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          confirmed_cleaned?: boolean
+          external_reference_url?: string | null
+          id?: string
+          provider?: string
+          session_id?: string
+          status?: Database["public"]["Enums"]["ai_submission_status"]
+          submitted_at?: string
+          submitted_by?: string
+          team_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_ai_submissions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_ai_submissions_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_ai_submissions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_ai_submissions_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_final_scores: {
+        Row: {
+          calculated_at: string
+          competitive_position: number
+          cumulative_ufcf: number
+          enterprise_value: number
+          final_ebitda_margin: number
+          final_game_value: number
+          final_net_debt: number
+          final_premium_share: number
+          final_revenue: number
+          full_game_result: Json
+          id: string
+          implied_equity_value: number
+          model_version: string
+          pv_explicit_ufcf: number
+          pv_terminal_value: number
+          risk_penalty: number
+          session_id: string
+          strategic_health: number
+          team_id: string
+        }
+        Insert: {
+          calculated_at?: string
+          competitive_position: number
+          cumulative_ufcf: number
+          enterprise_value: number
+          final_ebitda_margin: number
+          final_game_value: number
+          final_net_debt: number
+          final_premium_share: number
+          final_revenue: number
+          full_game_result: Json
+          id?: string
+          implied_equity_value: number
+          model_version: string
+          pv_explicit_ufcf: number
+          pv_terminal_value: number
+          risk_penalty: number
+          session_id: string
+          strategic_health: number
+          team_id: string
+        }
+        Update: {
+          calculated_at?: string
+          competitive_position?: number
+          cumulative_ufcf?: number
+          enterprise_value?: number
+          final_ebitda_margin?: number
+          final_game_value?: number
+          final_net_debt?: number
+          final_premium_share?: number
+          final_revenue?: number
+          full_game_result?: Json
+          id?: string
+          implied_equity_value?: number
+          model_version?: string
+          pv_explicit_ufcf?: number
+          pv_terminal_value?: number
+          risk_penalty?: number
+          session_id?: string
+          strategic_health?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_final_scores_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_final_scores_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -511,6 +669,22 @@ export type Database = {
       join_team: { Args: { p_code: string }; Returns: string }
       leave_team: { Args: { p_team_id: string }; Returns: undefined }
       session_team_count: { Args: { p_session_id: string }; Returns: number }
+      student_final_benchmark: {
+        Args: { p_session_id: string }
+        Returns: {
+          median_final_game_value: number
+          own_rank: number
+          total_teams: number
+        }[]
+      }
+      submit_ai_evidence: {
+        Args: {
+          p_confirmed_cleaned: boolean
+          p_external_reference_url?: string
+          p_provider: string
+        }
+        Returns: string
+      }
       submit_team_round_decision: {
         Args: { p_round_id: string }
         Returns: Database["public"]["Enums"]["decision_status"]
@@ -520,7 +694,7 @@ export type Database = {
         Returns: string
       }
       teacher_finalize_round: {
-        Args: { p_results: Json; p_round_id: string }
+        Args: { p_final_scores?: Json; p_results: Json; p_round_id: string }
         Returns: Database["public"]["Enums"]["round_status"]
       }
       teacher_open_round: {
@@ -536,6 +710,10 @@ export type Database = {
           unassigned_students: number
         }[]
       }
+      teacher_set_ai_submission_form_url: {
+        Args: { p_session_id: string; p_url: string }
+        Returns: string
+      }
       teacher_set_session_status: {
         Args: {
           p_session_id: string
@@ -550,9 +728,14 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["team_status"]
       }
+      teacher_verify_ai_evidence: {
+        Args: { p_team_id: string }
+        Returns: Database["public"]["Enums"]["ai_submission_status"]
+      }
       validate_session_code: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
+      ai_submission_status: "submitted" | "verified"
       app_role: "student" | "teacher" | "admin"
       decision_status: "draft" | "submitted"
       round_objective:
@@ -697,6 +880,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ai_submission_status: ["submitted", "verified"],
       app_role: ["student", "teacher", "admin"],
       decision_status: ["draft", "submitted"],
       round_objective: [

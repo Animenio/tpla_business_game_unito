@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireTeacherGameContext } from "@/src/lib/game/context";
 import {
   createOpeningState,
+  simulateGame,
   simulateRound,
   type OpeningState,
   type RoundResult,
@@ -41,8 +42,11 @@ function teacherRoundError(message: string) {
   if (message.includes("PREVIOUS_ROUND_NOT_CLOSED")) {
     return "Chiudi il round precedente prima di procedere.";
   }
-  if (message.includes("ROUND_STILL_IN_PROGRESS")) {
-    return "Non tutti i team hanno inviato e il tempo non è ancora scaduto.";
+  if (
+    message.includes("ROUND_STILL_IN_PROGRESS") ||
+    message.includes("TEAMS_MISSING_SUBMISSION")
+  ) {
+    return "Tutti i team attivi devono inviare prima della chiusura del round.";
   }
   if (message.includes("ROUND_NOT_OPEN")) {
     return "Il round non è aperto.";
@@ -279,9 +283,128 @@ export async function finalizeRoundAction(formData: FormData) {
     });
   }
 
+  let finalScores: Json | null = null;
+
+  if (round === 3) {
+    const [{ data: roundRows }, { data: activeTeams }] = await Promise.all([
+      supabase
+        .from("game_rounds")
+        .select("id, round_number")
+        .eq("session_id", session.id)
+        .order("round_number", { ascending: true }),
+      supabase
+        .from("teams")
+        .select("id")
+        .eq("session_id", session.id)
+        .eq("status", "active"),
+    ]);
+
+    const roundIds = (roundRows ?? []).map((item) => item.id);
+
+    const { data: allDecisions } = roundIds.length
+      ? await supabase
+          .from("team_round_decisions")
+          .select(
+            "round_id, team_id, status, hv_price_change, std_price_change, marketing_change, rnd_pct, capex_pct, inventory_days, receivable_days, natural_rubber_hedge, connected_rnd_allocation",
+          )
+          .in("round_id", roundIds)
+          .eq("status", "submitted")
+      : { data: [] };
+
+    const roundNumberById = new Map(
+      (roundRows ?? []).map((item) => [
+        item.id,
+        roundNumber(item.round_number),
+      ]),
+    );
+
+    const finalScorePayload: Array<
+      Record<string, Json | string | number>
+    > = [];
+
+    for (const team of activeTeams ?? []) {
+      const teamDecisions = (allDecisions ?? []).filter(
+        (item) => item.team_id === team.id,
+      );
+
+      if (teamDecisions.length !== 3) {
+        redirect(
+          routeError(
+            "/teacher/rounds/3",
+            "Ogni team deve avere tre set di decisioni inviati prima del calcolo finale.",
+          ),
+        );
+      }
+
+      const decisionsByRound = {} as Record<RoundNumber, DecisionSet>;
+
+      for (const item of teamDecisions) {
+        const decisionRound = roundNumberById.get(item.round_id);
+
+        if (!decisionRound) {
+          redirect(
+            routeError(
+              "/teacher/rounds/3",
+              "Impossibile ricostruire la sequenza dei round.",
+            ),
+          );
+        }
+
+        decisionsByRound[decisionRound] = decisionSet(item);
+      }
+
+      if (
+        !decisionsByRound[1] ||
+        !decisionsByRound[2] ||
+        !decisionsByRound[3]
+      ) {
+        redirect(
+          routeError(
+            "/teacher/rounds/3",
+            "Lo storico decisionale del team è incompleto.",
+          ),
+        );
+      }
+
+      const game = simulateGame(decisionsByRound);
+      const cumulativeUfcf =
+        game.rounds[1].financial.unleveredFreeCashFlow *
+          game.rounds[1].durationYears +
+        game.rounds[2].financial.unleveredFreeCashFlow *
+          game.rounds[2].durationYears +
+        game.rounds[3].financial.unleveredFreeCashFlow *
+          game.rounds[3].durationYears;
+
+      finalScorePayload.push({
+        team_id: team.id,
+        model_version: game.modelVersion,
+        full_game_result: game as unknown as Json,
+        final_game_value: game.valuation.finalGameValue,
+        enterprise_value: game.valuation.enterpriseValue,
+        implied_equity_value: game.valuation.impliedEquityValue,
+        risk_penalty: game.valuation.riskPenalty,
+        pv_explicit_ufcf: game.valuation.pvExplicitUfcf,
+        pv_terminal_value: game.valuation.pvTerminalValue,
+        cumulative_ufcf: cumulativeUfcf,
+        final_revenue: game.rounds[3].operating.totalRevenue,
+        final_ebitda_margin:
+          game.rounds[3].operating.adjustedEbitdaMargin,
+        final_premium_share:
+          game.rounds[3].operating.premiumRevenueShare,
+        final_net_debt: game.rounds[3].financial.netDebt,
+        competitive_position:
+          game.rounds[3].operating.competitivePosition,
+        strategic_health: game.rounds[3].operating.strategicHealth,
+      });
+    }
+
+    finalScores = finalScorePayload as unknown as Json;
+  }
+
   const { error } = await supabase.rpc("teacher_finalize_round", {
     p_round_id: roundId,
     p_results: resultPayload as unknown as Json,
+    p_final_scores: finalScores,
   });
 
   if (error) {
@@ -297,5 +420,12 @@ export async function finalizeRoundAction(formData: FormData) {
   revalidatePath(`/teacher/rounds/${round}`);
   revalidatePath(`/rounds/${round}/submitted`);
   revalidatePath(`/rounds/${round}/results`);
+  revalidatePath("/final");
+  revalidatePath("/teacher/leaderboard");
+
+  if (round === 3) {
+    redirect("/teacher/leaderboard");
+  }
+
   redirect(`/teacher/rounds/${round}`);
 }

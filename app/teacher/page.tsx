@@ -93,6 +93,10 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     redirect("/team");
   }
 
+  if (session.status === "completed") {
+    redirect("/teacher/leaderboard");
+  }
+
   const [{ data: profile }, { data: counts }, { data: teams }, { data: students }] =
     await Promise.all([
       supabase
