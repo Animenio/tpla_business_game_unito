@@ -486,7 +486,7 @@ function coordinateAscent(
   let bestFgv = simulateGame(decisions).valuation.finalGameValue;
   let iterations = 0;
 
-  for (let sweep = 0; sweep < 5; sweep += 1) {
+  for (let sweep = 0; sweep < 12; sweep += 1) {
     const openingFgv = bestFgv;
 
     for (const round of [1, 2, 3] as const) {
@@ -593,11 +593,50 @@ function multiStartCoordinateAscent() {
     }
   }
 
+  const numericBoundaryShares: Record<
+    string,
+    { shareAtMin: number; shareAtMax: number }
+  > = {};
+  const categoricalShares: Record<string, Record<string, number>> = {};
+
+  for (const round of [1, 2, 3] as const) {
+    for (const key of NUMERIC_KEYS) {
+      const minValue = GRID[key][0]!;
+      const maxValue = GRID[key][GRID[key].length - 1]!;
+      const values = results.map((result) => result.decisions[round][key]);
+      numericBoundaryShares[`r${round}.${key}`] = {
+        shareAtMin:
+          values.filter((value) => Math.abs(value - minValue) < 1e-12).length /
+          values.length,
+        shareAtMax:
+          values.filter((value) => Math.abs(value - maxValue) < 1e-12).length /
+          values.length,
+      };
+    }
+
+    for (const key of ["rnd_orientation", "resilience_policy"] as const) {
+      const counts = new Map<string, number>();
+      for (const result of results) {
+        const value = result.decisions[round][key];
+        counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+      categoricalShares[`r${round}.${key}`] = Object.fromEntries(
+        [...counts.entries()].map(([value, count]) => [
+          value,
+          count / results.length,
+        ]),
+      );
+    }
+  }
+
   return {
     starts,
     uniqueOptima: clusters.size,
     best: results[0],
     worstLocalOptimum: results[results.length - 1],
+    localOptimumFgv: summarize(results.map((result) => result.fgv)),
+    numericBoundaryShares,
+    categoricalShares,
     topDistinct: [...clusters.values()]
       .sort((a, b) => b.fgv - a.fgv)
       .slice(0, 6),
@@ -641,6 +680,14 @@ describe("v0.5.2 quantitative game-balance audit", () => {
           negativeFinalNetDebtFrequency:
             samples.filter((sample) => sample.finalNetDebt < 0).length /
             samples.length,
+          finalNetDebt: summarize(
+            samples.map((sample) => sample.finalNetDebt),
+          ),
+          maxDistress: Math.max(
+            ...samples.map((sample) => sample.distress),
+          ),
+          maxDistressSample: [...samples]
+            .sort((a, b) => b.distress - a.distress)[0],
           finalRevenue: summarize(
             samples.map((sample) => sample.finalRevenue),
           ),
@@ -724,7 +771,18 @@ describe("v0.5.2 quantitative game-balance audit", () => {
       );
       console.log("BALANCE_OAT_CATEGORIES=" + JSON.stringify(report.oneAtATimeCategories));
       console.log("BALANCE_ROUND_DISPERSION=" + JSON.stringify(report.roundOnlyDispersion));
-      console.log("BALANCE_COORDINATE_ASCENT=" + JSON.stringify(report.coordinateAscent));
+      console.log(
+        "BALANCE_COORDINATE_SUMMARY=" +
+          JSON.stringify({
+            starts: report.coordinateAscent.starts,
+            uniqueOptima: report.coordinateAscent.uniqueOptima,
+            best: report.coordinateAscent.best,
+            worstLocalOptimum: report.coordinateAscent.worstLocalOptimum,
+            localOptimumFgv: report.coordinateAscent.localOptimumFgv,
+            numericBoundaryShares: report.coordinateAscent.numericBoundaryShares,
+            categoricalShares: report.coordinateAscent.categoricalShares,
+          }),
+      );
     },
     60_000,
   );
