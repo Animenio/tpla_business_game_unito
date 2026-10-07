@@ -28,6 +28,22 @@ export function GameRealtime({
       }
     };
 
+    const handleSessionStatus = (status: string | null | undefined) => {
+      if (cancelled || !status) return false;
+
+      if (status === "locked" || status === "registration_open") {
+        router.replace("/lobby");
+        return true;
+      }
+
+      if (status === "completed") {
+        router.replace("/final");
+        return true;
+      }
+
+      return false;
+    };
+
     const checkGameState = async () => {
       const [{ data: session }, { data: rounds }] = await Promise.all([
         supabase
@@ -43,6 +59,10 @@ export function GameRealtime({
       ]);
 
       if (cancelled) return;
+
+      if (handleSessionStatus(session?.status)) {
+        return;
+      }
 
       const signature = JSON.stringify({
         sessionStatus: session?.status ?? null,
@@ -78,7 +98,12 @@ export function GameRealtime({
           table: "game_sessions",
           filter: `id=eq.${sessionId}`,
         },
-        refresh,
+        (payload) => {
+          const status = String(payload.new.status ?? "");
+          if (!handleSessionStatus(status)) {
+            refresh();
+          }
+        },
       )
       .on(
         "postgres_changes",
