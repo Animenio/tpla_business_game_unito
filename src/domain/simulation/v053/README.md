@@ -7,7 +7,7 @@ This directory contains the stable **v0.5.3 classroom model**, promoted without 
 - Model identifier: `aurora-tyres-v0.5.3`
 - Status: **validated and enabled for classroom routing**
 - Application routing: **enabled**
-- Database default: **promoted only after the application deployment is verified**
+- Database default: **enabled in production for new sessions**
 - Previous frozen model: **v0.5.2**
 - v0.4 and v0.5.2 remain frozen and untouched
 

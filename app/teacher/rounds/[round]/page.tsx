@@ -13,6 +13,10 @@ import {
 } from "@/src/domain/game/round-content";
 import { requireTeacherGameContext } from "@/src/lib/game/context";
 import { isReducedDecisionModelVersion } from "@/src/domain/simulation/model-version";
+import {
+  orientationLabel,
+  resilienceLabel,
+} from "@/src/domain/simulation/v05/storage";
 
 interface TeacherRoundPageProps {
   params: Promise<{ round: string }>;
@@ -31,6 +35,29 @@ function median(values: number[]) {
   return sorted.length % 2
     ? sorted[midpoint]
     : (sorted[midpoint - 1] + sorted[midpoint]) / 2;
+}
+
+function mode(values: string[]) {
+  if (!values.length) return null;
+
+  const counts = new Map<string, number>();
+  for (const value of values) {
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+
+  const ranked = [...counts.entries()].sort(
+    (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+  );
+  const first = ranked[0];
+  const second = ranked[1];
+
+  if (!first) return null;
+  if (second && second[1] === first[1]) return "Misto";
+  return first[0];
+}
+
+function modelLabel(modelVersion: string) {
+  return modelVersion.replace("aurora-tyres-", "").toUpperCase();
 }
 
 function signedPercent(value: number | null) {
@@ -93,7 +120,7 @@ export default async function TeacherRoundPage({
       supabase
         .from("team_round_decisions")
         .select(
-          "team_id, status, submitted_at, objective, hv_price_change, inventory_days, natural_rubber_hedge",
+          "team_id, status, submitted_at, objective, hv_price_change, inventory_days, natural_rubber_hedge, connected_rnd_allocation",
         )
         .eq("round_id", gameRound.id),
       supabase
@@ -124,6 +151,27 @@ export default async function TeacherRoundPage({
   const totalTeams = teams?.length ?? 0;
   const submittedCount = submitted.length;
   const isReducedModel = isReducedDecisionModelVersion(session.model_version);
+  const reducedResilienceMode = isReducedModel
+    ? mode(
+        submitted.map((decision) =>
+          resilienceLabel(
+            Number(decision.inventory_days),
+            Number(decision.natural_rubber_hedge),
+          ),
+        ),
+      )
+    : null;
+  const reducedOrientationMode = isReducedModel
+    ? mode(
+        submitted.map((decision) =>
+          orientationLabel(
+            Number(decision.connected_rnd_allocation),
+            round,
+          ),
+        ),
+      )
+    : null;
+  const canFinalize = totalTeams > 0 && submittedCount === totalTeams;
 
   return (
     <main className="application-page">
@@ -141,8 +189,9 @@ export default async function TeacherRoundPage({
               Round {round} — {gameRound.period_label}
             </h1>
             <p>
-              {gameRound.scenario_title} · Tutti i team ricevono lo stesso
-              scenario.
+              {gameRound.scenario_title} · World Model{" "}
+              {modelLabel(session.model_version)} · Tutti i team ricevono lo
+              stesso scenario.
             </p>
           </div>
           <div className="round-clock-card teacher-clock">
@@ -174,20 +223,37 @@ export default async function TeacherRoundPage({
             <strong>{signedPercent(premiumMedian)}</strong>
             <small>Vista live della classe</small>
           </article>
-          <article>
-            <span>Copertura gomma mediana</span>
-            <strong>{plainPercent(hedgeMedian)}</strong>
-            <small>Risposta allo shock</small>
-          </article>
-          <article>
-            <span>Scorte mediane</span>
-            <strong>
-              {inventoryMedian === null
-                ? "—"
-                : `${Math.round(inventoryMedian)} giorni`}
-            </strong>
-            <small>Scelte sul capitale circolante</small>
-          </article>
+          {isReducedModel ? (
+            <>
+              <article>
+                <span>Resilienza prevalente</span>
+                <strong>{reducedResilienceMode ?? "—"}</strong>
+                <small>Politica più scelta dalla classe</small>
+              </article>
+              <article>
+                <span>Orientamento R&S prevalente</span>
+                <strong>{reducedOrientationMode ?? "—"}</strong>
+                <small>Composizione più scelta della R&S</small>
+              </article>
+            </>
+          ) : (
+            <>
+              <article>
+                <span>Copertura gomma mediana</span>
+                <strong>{plainPercent(hedgeMedian)}</strong>
+                <small>Risposta allo shock</small>
+              </article>
+              <article>
+                <span>Scorte mediane</span>
+                <strong>
+                  {inventoryMedian === null
+                    ? "—"
+                    : `${Math.round(inventoryMedian)} giorni`}
+                </strong>
+                <small>Scelte sul capitale circolante</small>
+              </article>
+            </>
+          )}
           <article>
             <span>Stato round</span>
             <strong>{gameRound.status === "open" ? "OPEN" : "CLOSED"}</strong>
@@ -262,15 +328,25 @@ export default async function TeacherRoundPage({
 
                 <p className="round-close-copy">
                   La chiusura rende definitive tutte le decisioni inviate e
-                  calcola i risultati simultaneamente. Prima della scadenza è
-                  possibile chiudere solo quando tutti i team hanno inviato.
+                  calcola i risultati simultaneamente. Il round può essere
+                  chiuso solo quando tutti i team attivi hanno inviato. Se il
+                  tempo scade prima, estendi la finestra decisionale.
                 </p>
 
                 <form action={finalizeRoundAction}>
                   <input name="round_id" type="hidden" value={gameRound.id} />
                   <input name="round_number" type="hidden" value={round} />
-                  <button className="button-primary" type="submit">
-                    Chiudi round e calcola
+                  <button
+                    className="button-primary"
+                    disabled={!canFinalize}
+                    type="submit"
+                  >
+                    {canFinalize
+                      ? "Chiudi round e calcola"
+                      : `In attesa di ${Math.max(
+                          0,
+                          totalTeams - submittedCount,
+                        )} team`}
                   </button>
                 </form>
               </>

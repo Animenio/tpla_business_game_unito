@@ -38,9 +38,9 @@ A submitted decision is immutable.
 → /rounds/[round]/results
 ```
 
-The decision form is model-version aware. Aurora Tyres v0.5.2 exposes six economic decisions: Premium price positioning, Standard price positioning, marketing, R&D with an orientation choice, CapEx, and a resilience policy. The v0.4 legacy flow retains its original nine controls. Percentages are displayed in human units and converted to decimal ratios at the server-action boundary.
+The decision form is model-version aware. Aurora Tyres v0.5.3 and v0.5.2 expose six economic decisions: Premium price positioning, Standard price positioning, marketing, R&D with an orientation choice, CapEx, and a resilience policy. The v0.4 legacy flow retains its original nine controls. Percentages are displayed in human units and converted to decimal ratios at the server-action boundary.
 
-Server-side validation and simulation are routed from the session's persisted `model_version`. The v0.5.2 storage adapter maps the reduced categorical choices onto the existing decision columns so the database can support both versions without rewriting historical v0.4 sessions.
+Server-side validation and simulation are routed from the session's persisted `model_version`. The reduced-model storage adapter maps the categorical choices onto the existing decision columns so the database can support v0.5.3, v0.5.2 and historical v0.4 sessions without rewriting old records.
 
 ## Teacher flow
 
@@ -54,10 +54,10 @@ It provides:
 
 - synchronized countdown;
 - submitted / total teams;
-- class medians for selected decisions;
+- model-aware class signals for selected decisions;
 - submission status by team;
 - +2 minute extension;
-- atomic close-and-calculate operation.
+- close-and-calculate only when every active team has submitted.
 
 ## Calculation boundary
 
@@ -82,7 +82,7 @@ A team can edit its draft only while:
 - the round is `open`;
 - `now() <= closes_at`.
 
-The teacher can close before the deadline only when every active team has submitted. After the deadline, the teacher can finalize the available submitted teams.
+The teacher can close the round only when every active team has submitted. If the decision window expires while submissions are missing, the teacher must extend the round before those teams can submit; incomplete classes are not finalized silently.
 
 ## Realtime
 

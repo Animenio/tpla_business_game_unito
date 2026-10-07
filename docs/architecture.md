@@ -14,7 +14,7 @@ Target stack:
 - Google Forms/Drive for final AI-chat submission
 - deterministic server-side economic simulation engine
 
-Aurora Tyres v0.5.2 is the default economic World Model for new sessions. Aurora Tyres v0.4 remains frozen for legacy-session compatibility. The authoritative engine is selected from the persisted `game_sessions.model_version`; unknown versions fail closed rather than falling back silently.
+Aurora Tyres v0.5.3 is the default classroom World Model for new sessions. Aurora Tyres v0.5.2 and v0.4 remain frozen for historical-session compatibility. The authoritative engine is selected from the persisted `game_sessions.model_version`; unknown versions fail closed rather than falling back silently.
 
 ## 2. Application boundaries
 

@@ -177,7 +177,8 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
             <h1>{session.title}</h1>
             <p>
               Gestisci la composizione dei gruppi e avvia la simulazione quando
-              tutti gli studenti sono assegnati e i team sono confermati.
+              tutti gli studenti sono assegnati e i team sono confermati. World
+              Model: {session.model_version.replace("aurora-tyres-", "").toUpperCase()}.
             </p>
           </div>
           <div
