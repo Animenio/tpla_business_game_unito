@@ -2,9 +2,8 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { PENDING_GOOGLE_SESSION_COOKIE } from "@/src/lib/auth/google";
 import { createClient } from "@/src/lib/supabase/server";
-
-export const PENDING_GOOGLE_SESSION_COOKIE = "cfo_pending_google_session";
 
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
