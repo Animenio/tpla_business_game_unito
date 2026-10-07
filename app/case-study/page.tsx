@@ -36,6 +36,10 @@ export default async function CaseStudyPage() {
   ]);
 
   const openRound = rounds?.find((round) => round.status === "open");
+  const nextScheduledRound = rounds?.find(
+    (round) => round.status === "scheduled",
+  );
+  const focusRound = openRound ?? nextScheduledRound;
   const isReducedModel = isReducedDecisionModelVersion(session.model_version);
 
   return (
@@ -145,16 +149,22 @@ export default async function CaseStudyPage() {
 
         <section className="round-entry-card">
           <div>
-            <div className="card-eyebrow">ROUND 1</div>
+            <div className="card-eyebrow">
+              ROUND {focusRound?.round_number ?? "—"}
+            </div>
             <h2>
               {openRound
                 ? "La finestra decisionale è aperta"
-                : "Attendi l’apertura del Round 1"}
+                : focusRound
+                  ? `Attendi l’apertura del Round ${focusRound.round_number}`
+                  : "Tutti i round sono stati completati"}
             </h2>
             <p>
               {openRound
                 ? "Il docente ha aperto il round. Leggete il briefing prima di entrare nelle decisioni."
-                : "La Data Room rimane disponibile mentre il docente prepara l’avvio."}
+                : focusRound
+                  ? "La Data Room rimane disponibile mentre il docente prepara il prossimo round."
+                  : "La simulazione è in fase di chiusura."}
             </p>
           </div>
           {openRound ? (
