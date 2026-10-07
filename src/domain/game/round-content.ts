@@ -67,37 +67,58 @@ export const ROUND_CONTENT: Record<
   },
 };
 
-export const ROUND_ONE_FIGMA_DEFAULTS: DecisionSet = {
-  hv_price_change: 0.02,
-  std_price_change: 0,
-  marketing_change: 0.1,
-  rnd_pct: 0.05,
-  capex_pct: 0.07,
-  inventory_days: 140,
-  receivable_days: 34,
-  natural_rubber_hedge: 0.65,
-  connected_rnd_allocation: 0.25,
-};
+export const COMPETITOR_SCALE_REFERENCE = [
+  { name: "Michelin", revenueBn: 31.92, country: "Francia" },
+  { name: "Bridgestone", revenueBn: 28.45, country: "Giappone" },
+  { name: "Goodyear", revenueBn: 18.88, country: "Stati Uniti" },
+  { name: "Continental", revenueBn: 16.27, country: "Germania" },
+] as const;
 
 export const DECISION_HELP: Record<keyof DecisionSet, string> = {
   hv_price_change:
-    "Prezzo più alto = più margine unitario, ma può ridurre la domanda.",
+    "Variazione del prezzo Premium rispetto al livello di partenza del round. Un prezzo più alto può aumentare il margine unitario ma ridurre la domanda.",
   std_price_change:
-    "Nel segmento Standard i clienti sono più sensibili al prezzo e alla concorrenza.",
+    "Variazione del prezzo Standard rispetto al livello di partenza del round. Nel segmento Standard i clienti sono più sensibili al prezzo e alla concorrenza.",
   marketing_change:
-    "Costa nel breve periodo, ma può rafforzare marca e domanda nel tempo.",
+    "Variazione del budget marketing rispetto al baseline. Più marketing costa nel breve periodo ma può sostenere marca e domanda nel tempo.",
   rnd_pct:
-    "Più R&S può aumentare innovazione e competitività futura.",
+    "Quota dei ricavi destinata a Ricerca & Sviluppo. Più R&S può aumentare innovazione e competitività futura.",
   connected_rnd_allocation:
-    "Decide quanta R&S viene concentrata su connected tyre e capacità digitali.",
+    "Quota della R&S totale concentrata su connected tyre e capacità digitali.",
   capex_pct:
-    "Influenza impianti, capacità produttiva, ammortamenti e cassa.",
+    "Quota dei ricavi destinata agli investimenti. Influenza impianti, capacità produttiva, ammortamenti e cassa.",
   inventory_days:
-    "Più scorte proteggono da problemi di fornitura, ma immobilizzano più capitale.",
+    "Giorni di scorte target. Più scorte proteggono da problemi di fornitura ma immobilizzano più capitale.",
   receivable_days:
-    "Tempi più lunghi possono sostenere le vendite, ma assorbono cassa.",
+    "Tempo medio di incasso concesso ai clienti. Tempi più lunghi possono sostenere le vendite ma assorbono cassa.",
   natural_rubber_hedge:
-    "Più copertura riduce l’esposizione ai rincari della gomma, ma ha un costo.",
+    "Quota dell’esposizione alla gomma naturale coperta. Una copertura maggiore riduce l’esposizione ai rincari ma ha un costo.",
+};
+
+export const DECISION_BASELINE_CONTEXT: Record<keyof DecisionSet, string> = {
+  hv_price_change: "0% significa mantenere invariato il prezzo rispetto al livello di partenza.",
+  std_price_change: "0% significa mantenere invariato il prezzo rispetto al livello di partenza.",
+  marketing_change: "0% significa mantenere il budget marketing al livello baseline.",
+  rnd_pct:
+    "Nel 2025 Aurora Tyres ha speso circa " +
+    (BASELINE_2025.rnd_pct * 100).toFixed(1) +
+    "% dei ricavi commerciali in R&S.",
+  capex_pct:
+    "Nel 2025 il CapEx gestionale era circa " +
+    (BASELINE_2025.capex_pct * 100).toFixed(1) +
+    "% dei ricavi commerciali.",
+  inventory_days:
+    "Il livello 2025 riconciliato è circa " +
+    Math.round(BASELINE_2025.inventory_days) +
+    " giorni.",
+  receivable_days:
+    "Il tempo medio di incasso 2025 riconciliato è circa " +
+    Math.round(BASELINE_2025.receivable_days) +
+    " giorni.",
+  natural_rubber_hedge:
+    "Il materiale storico non fornisce una percentuale unica di copertura 2025: il valore va scelto dal team.",
+  connected_rnd_allocation:
+    "Il materiale storico non fornisce una quota univoca di R&S connected 2025: il valore va scelto dal team.",
 };
 
 export const DECISION_GROUPS: Array<{
