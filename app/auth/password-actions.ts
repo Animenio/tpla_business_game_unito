@@ -35,9 +35,10 @@ export async function requestPasswordResetAction(formData: FormData) {
 }
 
 export async function verifyRecoveryTokenAction(formData: FormData) {
+  const code = value(formData, "code");
   const tokenHash = value(formData, "token_hash");
 
-  if (!tokenHash) {
+  if (!code && !tokenHash) {
     redirect(
       "/forgot-password?error=" +
         encodeURIComponent(
@@ -47,10 +48,13 @@ export async function verifyRecoveryTokenAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
-    type: "recovery",
-    token_hash: tokenHash,
-  });
+
+  const { error } = code
+    ? await supabase.auth.exchangeCodeForSession(code)
+    : await supabase.auth.verifyOtp({
+        type: "recovery",
+        token_hash: tokenHash,
+      });
 
   if (error) {
     redirect(
