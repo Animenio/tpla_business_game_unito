@@ -464,6 +464,146 @@ function topBoundaryFlags(
     .sort((a, b) => b.share - a.share);
 }
 
+
+function strategySignature(
+  decisions: Record<RoundNumber, DecisionSet>,
+): string {
+  return JSON.stringify(decisions);
+}
+
+function coordinateAscent(
+  start: Record<RoundNumber, DecisionSet>,
+): {
+  decisions: Record<RoundNumber, DecisionSet>;
+  fgv: number;
+  iterations: number;
+} {
+  const decisions: Record<RoundNumber, DecisionSet> = {
+    1: { ...start[1] },
+    2: { ...start[2] },
+    3: { ...start[3] },
+  };
+  let bestFgv = simulateGame(decisions).valuation.finalGameValue;
+  let iterations = 0;
+
+  for (let sweep = 0; sweep < 5; sweep += 1) {
+    const openingFgv = bestFgv;
+
+    for (const round of [1, 2, 3] as const) {
+      for (const key of NUMERIC_KEYS) {
+        let localBestValue = decisions[round][key];
+        let localBestFgv = bestFgv;
+
+        for (const value of GRID[key]) {
+          const candidate = {
+            1: { ...decisions[1] },
+            2: { ...decisions[2] },
+            3: { ...decisions[3] },
+          };
+          setNumeric(candidate, round, key, value);
+          const fgv = simulateGame(candidate).valuation.finalGameValue;
+          if (fgv > localBestFgv + 1e-9) {
+            localBestFgv = fgv;
+            localBestValue = value;
+          }
+        }
+
+        setNumeric(decisions, round, key, localBestValue);
+        bestFgv = localBestFgv;
+      }
+
+      {
+        let localBest = decisions[round].rnd_orientation;
+        let localBestFgv = bestFgv;
+        for (const orientation of ORIENTATIONS[round]) {
+          const candidate = {
+            1: { ...decisions[1] },
+            2: { ...decisions[2] },
+            3: { ...decisions[3] },
+          };
+          candidate[round].rnd_orientation = orientation;
+          const fgv = simulateGame(candidate).valuation.finalGameValue;
+          if (fgv > localBestFgv + 1e-9) {
+            localBestFgv = fgv;
+            localBest = orientation;
+          }
+        }
+        decisions[round].rnd_orientation = localBest;
+        bestFgv = localBestFgv;
+      }
+
+      {
+        let localBest = decisions[round].resilience_policy;
+        let localBestFgv = bestFgv;
+        for (const resilience of RESILIENCE) {
+          const candidate = {
+            1: { ...decisions[1] },
+            2: { ...decisions[2] },
+            3: { ...decisions[3] },
+          };
+          candidate[round].resilience_policy = resilience;
+          const fgv = simulateGame(candidate).valuation.finalGameValue;
+          if (fgv > localBestFgv + 1e-9) {
+            localBestFgv = fgv;
+            localBest = resilience;
+          }
+        }
+        decisions[round].resilience_policy = localBest;
+        bestFgv = localBestFgv;
+      }
+    }
+
+    iterations += 1;
+    if (bestFgv <= openingFgv + 1e-9) break;
+  }
+
+  return { decisions, fgv: bestFgv, iterations };
+}
+
+function multiStartCoordinateAscent() {
+  const rand = mulberry32(SEED + 777_777);
+  const starts = 24;
+  const results = Array.from({ length: starts }, () =>
+    coordinateAscent(randomStrategy(rand)),
+  ).sort((a, b) => b.fgv - a.fgv);
+
+  const clusters = new Map<
+    string,
+    {
+      fgv: number;
+      decisions: Record<RoundNumber, DecisionSet>;
+      count: number;
+      iterations: number[];
+    }
+  >();
+
+  for (const result of results) {
+    const signature = strategySignature(result.decisions);
+    const current = clusters.get(signature);
+    if (current) {
+      current.count += 1;
+      current.iterations.push(result.iterations);
+    } else {
+      clusters.set(signature, {
+        fgv: result.fgv,
+        decisions: result.decisions,
+        count: 1,
+        iterations: [result.iterations],
+      });
+    }
+  }
+
+  return {
+    starts,
+    uniqueOptima: clusters.size,
+    best: results[0],
+    worstLocalOptimum: results[results.length - 1],
+    topDistinct: [...clusters.values()]
+      .sort((a, b) => b.fgv - a.fgv)
+      .slice(0, 6),
+  };
+}
+
 describe("v0.5.2 quantitative game-balance audit", () => {
   it(
     "samples the admissible strategy space and emits a deterministic audit report",
@@ -521,6 +661,7 @@ describe("v0.5.2 quantitative game-balance audit", () => {
         oneAtATimeNumeric: oneAtATimeNumeric(),
         oneAtATimeCategories: oneAtATimeCategories(),
         roundOnlyDispersion: roundOnlyDispersion(),
+        coordinateAscent: multiStartCoordinateAscent(),
       };
 
       expect(samples).toHaveLength(SAMPLE_SIZE);
@@ -539,9 +680,51 @@ describe("v0.5.2 quantitative game-balance audit", () => {
       console.log("BALANCE_TOP5=" + JSON.stringify(report.top5));
       console.log("BALANCE_BOTTOM1=" + JSON.stringify(report.bottom1));
       console.log("BALANCE_TOP_BOUNDARY_FLAGS=" + JSON.stringify(report.topBoundaryFlags));
-      console.log("BALANCE_OAT_NUMERIC=" + JSON.stringify(report.oneAtATimeNumeric));
+      console.log(
+        "BALANCE_BEST_RANDOM=" +
+          JSON.stringify(
+            [...samples].sort((a, b) => b.fgv - a.fgv)[0],
+          ),
+      );
+      console.log(
+        "BALANCE_WORST_RANDOM=" +
+          JSON.stringify(
+            [...samples].sort((a, b) => a.fgv - b.fgv)[0],
+          ),
+      );
+      console.log(
+        "BALANCE_OAT_R1=" +
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(report.oneAtATimeNumeric).filter(([key]) =>
+                key.startsWith("r1."),
+              ),
+            ),
+          ),
+      );
+      console.log(
+        "BALANCE_OAT_R2=" +
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(report.oneAtATimeNumeric).filter(([key]) =>
+                key.startsWith("r2."),
+              ),
+            ),
+          ),
+      );
+      console.log(
+        "BALANCE_OAT_R3=" +
+          JSON.stringify(
+            Object.fromEntries(
+              Object.entries(report.oneAtATimeNumeric).filter(([key]) =>
+                key.startsWith("r3."),
+              ),
+            ),
+          ),
+      );
       console.log("BALANCE_OAT_CATEGORIES=" + JSON.stringify(report.oneAtATimeCategories));
       console.log("BALANCE_ROUND_DISPERSION=" + JSON.stringify(report.roundOnlyDispersion));
+      console.log("BALANCE_COORDINATE_ASCENT=" + JSON.stringify(report.coordinateAscent));
     },
     60_000,
   );
