@@ -5,6 +5,7 @@ import {
   createSessionAction,
   duplicateSessionAction,
   previewSessionAction,
+  resetSessionStudentsAction,
   selectSessionAction,
 } from "@/app/admin/sessions/actions";
 import { AppFooter } from "@/src/components/app-footer";
@@ -155,6 +156,13 @@ export default async function AdminSessionsPage({
           <div className="admin-success">
             Sessione archiviata. I dati restano conservati ma il codice non
             accetta nuove registrazioni.
+          </div>
+        ) : null}
+        {updated === "reset" ? (
+          <div className="admin-success">
+            Reset completo eseguito. Studenti, team, decisioni e risultati sono
+            stati rimossi; le registrazioni sono di nuovo aperte e gli studenti
+            devono registrarsi nuovamente con il codice sessione.
           </div>
         ) : null}
         {notice ? (
@@ -326,6 +334,45 @@ export default async function AdminSessionsPage({
                             </button>
                           </form>
                         </>
+                      ) : null}
+
+                      {!archived ? (
+                        <details className="session-reset">
+                          <summary>Reset completo studenti</summary>
+                          <form action={resetSessionStudentsAction}>
+                            <input
+                              name="session_id"
+                              type="hidden"
+                              value={session.id}
+                            />
+                            <div className="session-reset-copy">
+                              <strong>Riparti con la stessa sessione, ma da zero lato studente.</strong>
+                              <span>
+                                Verranno eliminati iscrizioni studente, team,
+                                decisioni, risultati, classifica e consegne AI.
+                                Codice sessione, World Model, materiali e accessi
+                                staff restano invariati.
+                              </span>
+                              <span>
+                                Dopo il reset ogni studente dovrà registrarsi
+                                nuovamente inserendo <b>{session.code}</b>.
+                              </span>
+                            </div>
+                            <label>
+                              <span>Digita il codice sessione per confermare</span>
+                              <input
+                                autoCapitalize="characters"
+                                autoComplete="off"
+                                name="confirmation_code"
+                                placeholder={session.code}
+                                required
+                              />
+                            </label>
+                            <button className="button-danger" type="submit">
+                              Azzera completamente la sessione
+                            </button>
+                          </form>
+                        </details>
                       ) : null}
 
                       <details className="session-duplicate">
