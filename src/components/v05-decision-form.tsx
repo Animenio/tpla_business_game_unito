@@ -1,4 +1,5 @@
 import { reviewDecisionsAction } from "@/app/rounds/actions";
+import { DecisionInfoPopover } from "@/src/components/decision-info-popover";
 import {
   ROUND_OBJECTIVES,
 } from "@/src/domain/game/round-content";
@@ -69,19 +70,10 @@ function numericInput(
 
 function cardInfo(key: keyof DecisionSet) {
   return (
-    <div
-      aria-label="Informazioni sulla decisione"
-      className="decision-info"
-      tabIndex={0}
-    >
-      <span className="decision-info-trigger">ⓘ Info</span>
-      <div className="decision-info-panel" role="tooltip">
-        <strong>Cosa significa</strong>
-        <p>{V05_DECISION_HELP[key]}</p>
-        <strong>Riferimento</strong>
-        <p>{V05_DECISION_BASELINE_CONTEXT[key]}</p>
-      </div>
-    </div>
+    <DecisionInfoPopover
+      description={V05_DECISION_HELP[key]}
+      reference={V05_DECISION_BASELINE_CONTEXT[key]}
+    />
   );
 }
 
