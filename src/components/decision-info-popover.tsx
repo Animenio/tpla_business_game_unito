@@ -56,7 +56,7 @@ export function DecisionInfoPopover({
     const fitsBelow = belowTop + panelRect.height <= viewportHeight - margin;
     const fitsAbove = aboveTop >= margin;
 
-    let top = fitsBelow
+    const top = fitsBelow
       ? belowTop
       : fitsAbove
         ? aboveTop
@@ -110,7 +110,7 @@ export function DecisionInfoPopover({
         onBlur={() => setOpen(false)}
         onClick={() => {
           if (window.matchMedia("(hover: none)").matches) {
-            setOpen((current) => !current);
+            setOpen(true);
           }
         }}
         onFocus={() => setOpen(true)}
