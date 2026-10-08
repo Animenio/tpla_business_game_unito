@@ -38,12 +38,12 @@ export function GameRealtime({
       }
 
       if (status === "completed") {
-        if (pathname === "/final" || pathname === "/ai-chat") {
-          refresh();
-        } else {
+        if (pathname !== "/final" && pathname !== "/ai-chat") {
           router.replace("/final");
+          return true;
         }
-        return true;
+
+        return false;
       }
 
       return false;
