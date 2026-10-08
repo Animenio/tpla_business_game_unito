@@ -11,7 +11,6 @@ interface StudentFinalLeaderboardProps {
   currentTeamId: string;
   modelVersion: string;
   rows: StudentFinalLeaderboardRow[];
-  sessionCode: string;
 }
 
 function moneyBn(value: number) {
@@ -27,7 +26,6 @@ export function StudentFinalLeaderboard({
   currentTeamId,
   modelVersion,
   rows,
-  sessionCode,
 }: StudentFinalLeaderboardProps) {
   const first = rows[0];
   const second = rows[1];
