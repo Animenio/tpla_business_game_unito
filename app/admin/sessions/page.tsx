@@ -5,6 +5,7 @@ import {
   createSessionAction,
   duplicateSessionAction,
   previewSessionAction,
+  resetStudentSessionAction,
   selectSessionAction,
 } from "@/app/admin/sessions/actions";
 import { AppFooter } from "@/src/components/app-footer";
@@ -155,6 +156,12 @@ export default async function AdminSessionsPage({
           <div className="admin-success">
             Sessione archiviata. I dati restano conservati ma il codice non
             accetta nuove registrazioni.
+          </div>
+        ) : null}
+        {updated === "student-reset" ? (
+          <div className="admin-success">
+            Reset completato. Studenti, team, decisioni, risultati e consegne
+            AI sono stati rimossi; le registrazioni sono di nuovo aperte.
           </div>
         ) : null}
         {notice ? (
@@ -326,6 +333,40 @@ export default async function AdminSessionsPage({
                             </button>
                           </form>
                         </>
+                      ) : null}
+
+
+                      {!archived ? (
+                        <details className="session-duplicate">
+                          <summary>Reset studenti</summary>
+                          <form action={resetStudentSessionAction}>
+                            <input
+                              name="session_id"
+                              type="hidden"
+                              value={session.id}
+                            />
+                            <p className="small-note">
+                              Azzera completamente il lato studente: elimina
+                              registrazioni alla sessione, team, decisioni,
+                              risultati e consegne AI. Mantiene configurazione,
+                              Data Room e accessi staff. Gli studenti dovranno
+                              registrarsi di nuovo.
+                            </p>
+                            <label>
+                              <span>Digita {session.code} per confermare</span>
+                              <input
+                                autoCapitalize="characters"
+                                autoComplete="off"
+                                name="confirmation_code"
+                                placeholder={session.code}
+                                required
+                              />
+                            </label>
+                            <button className="text-danger-action" type="submit">
+                              Reset completo studenti
+                            </button>
+                          </form>
+                        </details>
                       ) : null}
 
                       <details className="session-duplicate">
