@@ -809,6 +809,17 @@ export type Database = {
           total_teams: number
         }[]
       }
+      student_final_leaderboard: {
+        Args: { p_session_id: string }
+        Returns: {
+          cumulative_ufcf: number
+          final_game_value: number
+          rank_position: number
+          strategic_health: number
+          team_id: string
+          team_name: string
+        }[]
+      }
       submit_ai_evidence: {
         Args: {
           p_confirmed_cleaned: boolean
