@@ -84,6 +84,7 @@ const PREVIEW_SCREENS: ReadonlyArray<{
   { id: "teacher-live", label: "Console round", audience: "Docente", roundAware: true },
   { id: "final-locked", label: "Finale bloccato", audience: "Studente" },
   { id: "ai-evidence", label: "Consegna AI", audience: "Studente" },
+  { id: "ai-waiting", label: "Consegna registrata", audience: "Studente" },
   { id: "teacher-debrief", label: "Debrief", audience: "Docente" },
   { id: "final-released", label: "Finale pubblicato", audience: "Studente" },
   { id: "leaderboard", label: "Leaderboard", audience: "Docente" },
@@ -1022,6 +1023,62 @@ function PreviewAiEvidence({ sessionCode }: { sessionCode: string }) {
   );
 }
 
+function PreviewAiWaiting({ sessionCode }: { sessionCode: string }) {
+  return (
+    <main className="application-page admin-preview-surface">
+      <PreviewHeader section="Consegna effettuata" sessionCode={sessionCode} />
+      <div className="page-main ai-waiting-main">
+        <section className="ai-waiting-card">
+          <div className="ai-waiting-check" aria-hidden="true">
+            ✓
+          </div>
+          <div className="card-eyebrow">CONSEGNA REGISTRATA</div>
+          <h1>Consegna effettuata</h1>
+          <p className="ai-waiting-lead">
+            La conversazione AI del team è stata registrata correttamente.
+          </p>
+
+          <div className="ai-waiting-status">
+            <span className="status-badge amber">
+              <span className="status-dot" />
+              Risultati in attesa del docente
+            </span>
+            <p>
+              Attendete la pubblicazione ufficiale. Quando il docente
+              selezionerà <strong>Mostra risultati</strong>, questa schermata
+              si aggiornerà automaticamente e verrà aperta la classifica finale.
+            </p>
+          </div>
+
+          <div className="ai-waiting-details">
+            <div>
+              <span>Team</span>
+              <strong>Alpha</strong>
+            </div>
+            <div>
+              <span>Modello AI dichiarato</span>
+              <strong>ChatGPT</strong>
+            </div>
+            <div>
+              <span>Registrata il</span>
+              <strong>08/10/26, 11:42</strong>
+            </div>
+            <div>
+              <span>Stato verifica</span>
+              <strong>Registrata</strong>
+            </div>
+          </div>
+
+          <div className="ai-waiting-note">
+            Non è necessario aggiornare manualmente la pagina.
+          </div>
+        </section>
+      </div>
+      <PreviewFooter />
+    </main>
+  );
+}
+
 function PreviewTeacherDebrief({
   sessionCode,
   final,
@@ -1155,23 +1212,128 @@ function PreviewFinalReleased({
   annual: AdminGamePreviewProps["annual"];
   final: AdminGamePreviewProps["final"];
 }) {
+  const rows = [
+    {
+      position: 1,
+      name: "Alpha",
+      fgv: final.finalGameValue,
+      fcf: annual.cumulativeUfcf,
+      health: final.strategicHealth,
+      own: true,
+    },
+    {
+      position: 2,
+      name: "Delta",
+      fgv: final.finalGameValue * 0.96,
+      fcf: annual.cumulativeUfcf * 0.94,
+      health: final.strategicHealth * 0.96,
+      own: false,
+    },
+    {
+      position: 3,
+      name: "Gamma",
+      fgv: final.finalGameValue * 0.93,
+      fcf: annual.cumulativeUfcf * 0.9,
+      health: final.strategicHealth * 0.93,
+      own: false,
+    },
+    {
+      position: 4,
+      name: "Sigma",
+      fgv: final.finalGameValue * 0.88,
+      fcf: annual.cumulativeUfcf * 0.86,
+      health: final.strategicHealth * 0.88,
+      own: false,
+    },
+    {
+      position: 5,
+      name: "Beta",
+      fgv: final.finalGameValue * 0.83,
+      fcf: annual.cumulativeUfcf * 0.8,
+      health: final.strategicHealth * 0.84,
+      own: false,
+    },
+  ];
+  const podium = [rows[1], rows[0], rows[2]];
+
   return (
     <main className="application-page admin-preview-surface">
-      <PreviewHeader section="Report finale" sessionCode={sessionCode} />
+      <PreviewHeader section="Classifica finale" sessionCode={sessionCode} />
       <div className="page-main final-main">
         <section className="final-heading">
           <div>
-            <h1>Alpha — Report finale</h1>
+            <h1>Classifica finale</h1>
             <p>
-              Il report combina valore creato, KPI finali, decisioni dei tre
-              round e benchmark rispetto alla classe.
+              I risultati sono stati pubblicati dal docente. Scopri il podio,
+              la classifica completa e poi approfondisci il report del tuo team.
             </p>
           </div>
           <div className="status-badge green">
             <span className="status-dot" />
-            4° di 12 team
+            1° di 5 team
           </div>
         </section>
+
+        <section className="student-leaderboard-reveal">
+          <div className="student-podium" aria-label="Podio finale">
+            <div className="student-podium-label">PODIO</div>
+            <div className="student-podium-grid">
+              {podium.map((entry) => (
+                <article
+                  className={`student-podium-card position-${entry.position}${
+                    entry.own ? " own-team" : ""
+                  }`}
+                  key={entry.name}
+                >
+                  <span>{entry.position}°</span>
+                  <strong>{entry.name.toUpperCase()}</strong>
+                  <small>{moneyBn(entry.fgv)}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="student-ranking-card">
+            <div className="student-ranking-heading">
+              <div>
+                <div className="card-eyebrow">RISULTATI FINALI</div>
+                <h2>Classifica completa</h2>
+              </div>
+              <span>5 team</span>
+            </div>
+
+            <div className="student-ranking-table header">
+              <span>#</span>
+              <span>Team</span>
+              <span>Valore finale</span>
+              <span>FCF cumulato</span>
+              <span>Solidità strategica</span>
+            </div>
+
+            <div className="student-ranking-rows">
+              {rows.map((entry) => (
+                <div
+                  className={
+                    entry.own
+                      ? "student-ranking-table row own-team"
+                      : "student-ranking-table row"
+                  }
+                  key={entry.name}
+                >
+                  <strong>{entry.position}</strong>
+                  <div>
+                    <strong>{entry.name}</strong>
+                    {entry.own ? <small>Il tuo team</small> : null}
+                  </div>
+                  <span>{moneyBn(entry.fgv)}</span>
+                  <span>{moneyBn(entry.fcf)}</span>
+                  <span>{entry.health.toFixed(2)}x</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="final-value-hero">
           <div>
             <span>VALORE FINALE SIMULATO</span>
@@ -1183,11 +1345,11 @@ function PreviewFinalReleased({
           </div>
           <div className="final-hero-metric">
             <span>Posizione</span>
-            <strong>4° posto</strong>
+            <strong>1° posto</strong>
           </div>
           <div className="final-hero-metric">
             <span>vs class median</span>
-            <strong>+1.8%</strong>
+            <strong>+7.5%</strong>
           </div>
           <div className="final-hero-metric">
             <span>FCF cumulato</span>
@@ -1198,6 +1360,7 @@ function PreviewFinalReleased({
             <strong>{final.strategicHealth.toFixed(2)}x</strong>
           </div>
         </section>
+
         <section className="final-value-breakdown-card">
           <div className="card-eyebrow">COME SI FORMA IL VALORE</div>
           <h2>
@@ -1388,6 +1551,9 @@ export function AdminGamePreview(props: AdminGamePreviewProps) {
       break;
     case "ai-evidence":
       body = <PreviewAiEvidence sessionCode={props.sessionCode} />;
+      break;
+    case "ai-waiting":
+      body = <PreviewAiWaiting sessionCode={props.sessionCode} />;
       break;
     case "teacher-debrief":
       body = (
