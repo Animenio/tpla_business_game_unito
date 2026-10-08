@@ -81,5 +81,6 @@ export async function releaseFinalResultsAction() {
 
   revalidatePath("/teacher/leaderboard");
   revalidatePath("/final");
+  revalidatePath("/ai-chat");
   redirect("/teacher/leaderboard");
 }
