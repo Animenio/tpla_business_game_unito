@@ -46,5 +46,5 @@ export async function submitAiEvidenceAction(formData: FormData) {
 
   revalidatePath("/ai-chat");
   revalidatePath("/final");
-  redirect("/ai-chat?submitted=1");
+  redirect("/ai-chat");
 }
