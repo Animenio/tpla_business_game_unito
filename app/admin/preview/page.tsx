@@ -50,7 +50,7 @@ export default async function AdminPreviewPage({
       .order("round_number", { ascending: true }),
     supabase
       .from("session_materials")
-      .select("id, title, description, material_type, source_url, required")
+      .select("id, title, description, file_type, source_url, required")
       .eq("session_id", session.id)
       .order("sort_order", { ascending: true }),
   ]);
@@ -96,7 +96,14 @@ export default async function AdminPreviewPage({
         competitivePosition: game.annual[2030].competitivePosition,
         strategicHealth: game.annual[2030].strategicHealth,
       }}
-      materials={materials ?? []}
+      materials={(materials ?? []).map((material) => ({
+        id: material.id,
+        title: material.title,
+        description: material.description,
+        material_type: material.file_type,
+        source_url: material.source_url,
+        required: material.required,
+      }))}
       modelVersion={session.model_version}
       previewModelVersion={V053_MODEL_VERSION}
       profileName={profile.full_name}
