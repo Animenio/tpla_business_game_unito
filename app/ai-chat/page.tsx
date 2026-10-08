@@ -99,9 +99,11 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
               nel flusso Google Form/Drive previsto per il corso.
             </p>
 
-            {formUrl ? (
+            <div className="ai-external-upload-zone">
+              <span className="ai-upload-arrow" aria-hidden="true">↑</span>
+              {formUrl ? (
               <a
-                className="button-primary ai-form-button"
+                className="button-secondary ai-form-button"
                 href={formUrl}
                 rel="noreferrer"
                 target="_blank"
@@ -109,14 +111,15 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
                 Apri il modulo di caricamento
               </a>
             ) : (
-              <button className="button-primary ai-form-button" disabled type="button">
+              <button className="button-secondary ai-form-button" disabled type="button">
                 Modulo non ancora pubblicato
               </button>
             )}
 
-            <div className="ai-file-note">
-              Formati consigliati: PDF, TXT, DOCX o HTML. Rimuovete contenuti
-              personali o non pertinenti prima della consegna.
+              <div className="ai-file-note">
+                Formati consigliati: PDF · TXT · DOCX · HTML. Rimuovete contenuti
+                personali o non pertinenti prima della consegna.
+              </div>
             </div>
 
             <div className="card-rule" />
@@ -155,6 +158,7 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
                 />
               </label>
 
+              <div className="ai-confirmation-title">3 · Conferma</div>
               <label className="ai-confirmation">
                 <input name="confirmed_cleaned" required type="checkbox" />
                 <span>

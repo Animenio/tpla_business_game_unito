@@ -232,13 +232,31 @@ export default async function FinalPage() {
           </section>
         ) : (
           <section className="final-results-locked">
-            <div className="card-eyebrow">CLASSIFICA BLOCCATA</div>
-            <h2>Il risultato comparativo verrà svelato dal docente</h2>
-            <p>
-              Potete già rivedere le vostre scelte e i KPI operativi. Valore
-              finale, posizione e benchmark della classe restano nascosti fino
-              alla pubblicazione ufficiale.
-            </p>
+            <div className="final-results-locked-copy">
+              <div className="card-eyebrow">CLASSIFICA BLOCCATA</div>
+              <h2>Il risultato comparativo verrà svelato dal docente</h2>
+              <p>
+                Potete già rivedere le vostre scelte e i KPI operativi. Valore
+                finale, posizione e benchmark della classe restano nascosti fino
+                alla pubblicazione ufficiale.
+              </p>
+            </div>
+
+            <div className="final-results-locked-metrics">
+              <div>
+                <span>Stato consegna</span>
+                <strong>{aiDone ? "Registrata" : "Da completare"}</strong>
+              </div>
+              <div>
+                <span>Cosa puoi vedere ora</span>
+                <strong>KPI operativi</strong>
+              </div>
+              <div>
+                <span>Classifica</span>
+                <strong>Nascosta</strong>
+              </div>
+            </div>
+
             <div className="final-results-locked-status">
               <span className={aiDone ? "status-badge green" : "status-badge amber"}>
                 <span className="status-dot" />
