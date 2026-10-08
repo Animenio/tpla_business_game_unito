@@ -747,6 +747,10 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: Database["public"]["Enums"]["session_status"]
       }
+      admin_reset_session_students: {
+        Args: { p_confirmation_code: string; p_session_id: string }
+        Returns: Json
+      }
       admin_authorize_staff: {
         Args: {
           p_email: string
