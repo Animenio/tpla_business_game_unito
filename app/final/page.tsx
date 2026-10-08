@@ -90,35 +90,25 @@ export default async function FinalPage() {
         median_final_game_value: number;
       }> });
 
-  const leaderboardScoresRequest = resultsReleased
-    ? supabase
-        .from("team_final_scores")
-        .select("team_id, final_game_value, cumulative_ufcf, strategic_health")
-        .eq("session_id", session.id)
-        .order("final_game_value", { ascending: false })
+  const leaderboardRequest = resultsReleased
+    ? supabase.rpc("student_final_leaderboard", { p_session_id: session.id })
     : Promise.resolve({
         data: [] as Array<{
+          rank_position: number;
           team_id: string;
+          team_name: string;
           final_game_value: number;
           cumulative_ufcf: number;
           strategic_health: number;
         }>,
       });
 
-  const leaderboardTeamsRequest = resultsReleased
-    ? supabase
-        .from("teams")
-        .select("id, name")
-        .eq("session_id", session.id)
-    : Promise.resolve({ data: [] as Array<{ id: string; name: string }> });
-
   const [
     { data: finalScore },
     { data: benchmarkRows },
     { data: rounds },
     { data: aiSubmission },
-    { data: leaderboardScores },
-    { data: leaderboardTeams },
+    { data: leaderboardRows },
   ] = await Promise.all([
     supabase
       .from("team_final_scores")
@@ -138,8 +128,7 @@ export default async function FinalPage() {
       .eq("session_id", session.id)
       .eq("team_id", team.id)
       .maybeSingle(),
-    leaderboardScoresRequest,
-    leaderboardTeamsRequest,
+    leaderboardRequest,
   ]);
 
   if (!finalScore) {
@@ -201,13 +190,10 @@ export default async function FinalPage() {
 
   const netDebt = Number(finalScore.final_net_debt);
   const aiDone = Boolean(aiSubmission);
-  const leaderboardTeamMap = new Map(
-    (leaderboardTeams ?? []).map((item) => [item.id, item.name]),
-  );
-  const leaderboard = (leaderboardScores ?? []).map((score, index) => ({
-    position: index + 1,
+  const leaderboard = (leaderboardRows ?? []).map((score) => ({
+    position: score.rank_position,
     teamId: score.team_id,
-    teamName: leaderboardTeamMap.get(score.team_id) ?? "Team",
+    teamName: score.team_name,
     finalGameValue: Number(score.final_game_value),
     cumulativeUfcf: Number(score.cumulative_ufcf),
     strategicHealth: Number(score.strategic_health),
