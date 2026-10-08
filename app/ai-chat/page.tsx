@@ -8,12 +8,24 @@ import { requireStudentGameContext } from "@/src/lib/game/context";
 interface AiChatPageProps {
   searchParams: Promise<{
     error?: string | string[];
-    submitted?: string | string[];
   }>;
 }
 
 function param(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function providerLabel(provider: string) {
+  switch (provider) {
+    case "chatgpt":
+      return "ChatGPT";
+    case "claude":
+      return "Claude";
+    case "gemini":
+      return "Gemini";
+    default:
+      return "Altro";
+  }
 }
 
 export default async function AiChatPage({ searchParams }: AiChatPageProps) {
@@ -39,9 +51,83 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
       .maybeSingle(),
   ]);
 
+  if (existing && session.results_released_at) {
+    redirect("/final");
+  }
+
+  if (existing) {
+    return (
+      <main className="application-page">
+        <GameRealtime sessionId={session.id} teamId={team.id} />
+        <AppHeader
+          section="Consegna effettuata"
+          sessionCode="REPORT FINALE"
+          userName={team.name}
+        />
+
+        <div className="page-main ai-waiting-main">
+          <section className="ai-waiting-card">
+            <div className="ai-waiting-check" aria-hidden="true">
+              ✓
+            </div>
+            <div className="card-eyebrow">CONSEGNA REGISTRATA</div>
+            <h1>Consegna effettuata</h1>
+            <p className="ai-waiting-lead">
+              La conversazione AI del team è stata registrata correttamente.
+            </p>
+
+            <div className="ai-waiting-status">
+              <span className="status-badge amber">
+                <span className="status-dot" />
+                Risultati in attesa del docente
+              </span>
+              <p>
+                Attendete la pubblicazione ufficiale. Quando il docente
+                selezionerà <strong>Mostra risultati</strong>, questa schermata
+                si aggiornerà automaticamente e verrà aperta la classifica
+                finale.
+              </p>
+            </div>
+
+            <div className="ai-waiting-details">
+              <div>
+                <span>Team</span>
+                <strong>{team.name}</strong>
+              </div>
+              <div>
+                <span>Modello AI dichiarato</span>
+                <strong>{providerLabel(existing.provider)}</strong>
+              </div>
+              <div>
+                <span>Registrata il</span>
+                <strong>
+                  {new Intl.DateTimeFormat("it-IT", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  }).format(new Date(existing.submitted_at))}
+                </strong>
+              </div>
+              <div>
+                <span>Stato verifica</span>
+                <strong>
+                  {existing.status === "verified" ? "Verificata" : "Registrata"}
+                </strong>
+              </div>
+            </div>
+
+            <div className="ai-waiting-note">
+              Non è necessario aggiornare manualmente la pagina.
+            </div>
+          </section>
+        </div>
+
+        <AppFooter />
+      </main>
+    );
+  }
+
   const search = await searchParams;
   const error = param(search.error);
-  const submitted = param(search.submitted) === "1";
   const formUrl = sessionConfig?.ai_submission_form_url ?? null;
 
   return (
@@ -63,31 +149,13 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
               ricercato evidenze e supportato le decisioni dei tre round.
             </p>
           </div>
-          <div
-            className={
-              existing?.status === "verified"
-                ? "status-badge green"
-                : existing
-                  ? "status-badge amber"
-                  : "status-badge blue"
-            }
-          >
+          <div className="status-badge blue">
             <span className="status-dot" />
-            {existing?.status === "verified"
-              ? "Verificata"
-              : existing
-                ? "Consegnata"
-                : "Da consegnare"}
+            Da consegnare
           </div>
         </section>
 
         {error ? <div className="page-error ai-upload-error">{error}</div> : null}
-        {submitted ? (
-          <div className="ai-upload-success">
-            Consegna registrata. Il docente vedrà lo stato del team nella
-            console finale.
-          </div>
-        ) : null}
 
         <div className="ai-upload-grid">
           <section className="ai-upload-card">
@@ -100,21 +168,27 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
             </p>
 
             <div className="ai-external-upload-zone">
-              <span className="ai-upload-arrow" aria-hidden="true">↑</span>
+              <span className="ai-upload-arrow" aria-hidden="true">
+                ↑
+              </span>
               {formUrl ? (
-              <a
-                className="button-secondary ai-form-button"
-                href={formUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                Apri il modulo di caricamento
-              </a>
-            ) : (
-              <button className="button-secondary ai-form-button" disabled type="button">
-                Modulo non ancora pubblicato
-              </button>
-            )}
+                <a
+                  className="button-secondary ai-form-button"
+                  href={formUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Apri il modulo di caricamento
+                </a>
+              ) : (
+                <button
+                  className="button-secondary ai-form-button"
+                  disabled
+                  type="button"
+                >
+                  Modulo non ancora pubblicato
+                </button>
+              )}
 
               <div className="ai-file-note">
                 Formati consigliati: PDF · TXT · DOCX · HTML. Rimuovete contenuti
@@ -136,7 +210,6 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
                   ].map(([value, label]) => (
                     <label className="provider-chip" key={value}>
                       <input
-                        defaultChecked={existing?.provider === value}
                         name="provider"
                         required
                         type="radio"
@@ -151,7 +224,6 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
               <label className="ai-reference-field">
                 <span>Link alla copia/documento (opzionale)</span>
                 <input
-                  defaultValue={existing?.external_reference_url ?? ""}
                   name="external_reference_url"
                   placeholder="https://..."
                   type="url"
@@ -179,11 +251,7 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
 
           <aside className="ai-report-card">
             <div className="card-eyebrow">REPORT FINALE</div>
-            <h2>
-              {session.results_released_at
-                ? "Classifica pubblicata"
-                : "Completa la consegna e attendi lo svelamento"}
-            </h2>
+            <h2>Completa la consegna e attendi lo svelamento</h2>
             <ul>
               <li>Decisioni dei tre round</li>
               <li>Obiettivo dichiarato in ogni round</li>
@@ -192,27 +260,17 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
               <li>Risultati economico-finanziari e benchmark</li>
             </ul>
 
-            {existing ? (
-              <div className="ai-existing-status">
-                <span>Ultima registrazione</span>
-                <strong>
-                  {existing.submitted_at
-                    ? new Intl.DateTimeFormat("it-IT", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      }).format(new Date(existing.submitted_at))
-                    : "—"}
-                </strong>
-                <small>
-                  Stato: {existing.status === "verified" ? "verificata" : "in verifica"}
-                </small>
-              </div>
-            ) : null}
+            <div className="ai-existing-status">
+              <span>Stato</span>
+              <strong>Da consegnare</strong>
+              <small>
+                Dopo “Registra la consegna” entrerete automaticamente nella
+                schermata di attesa.
+              </small>
+            </div>
 
             <a className="button-secondary ai-back-button" href="/final">
-              {session.results_released_at
-                ? "Vai ai risultati finali"
-                : "Torna al report in attesa"}
+              Torna al report
             </a>
           </aside>
         </div>

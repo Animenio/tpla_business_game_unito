@@ -65,6 +65,11 @@ export function GameRealtime({
 
       if (cancelled) return;
 
+      if (session?.results_released_at && pathname === "/ai-chat") {
+        router.replace("/final");
+        return;
+      }
+
       if (handleSessionStatus(session?.status)) {
         return;
       }
@@ -105,8 +110,17 @@ export function GameRealtime({
           filter: `id=eq.${sessionId}`,
         },
         (payload) => {
-          const nextRow = payload.new as { status?: unknown };
+          const nextRow = payload.new as {
+            status?: unknown;
+            results_released_at?: unknown;
+          };
           const status = String(nextRow.status ?? "");
+
+          if (nextRow.results_released_at && pathname === "/ai-chat") {
+            router.replace("/final");
+            return;
+          }
+
           if (!handleSessionStatus(status)) {
             refresh();
           }

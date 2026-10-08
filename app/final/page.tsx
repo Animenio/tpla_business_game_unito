@@ -90,11 +90,25 @@ export default async function FinalPage() {
         median_final_game_value: number;
       }> });
 
+  const leaderboardRequest = resultsReleased
+    ? supabase.rpc("student_final_leaderboard", { p_session_id: session.id })
+    : Promise.resolve({
+        data: [] as Array<{
+          rank_position: number;
+          team_id: string;
+          team_name: string;
+          final_game_value: number;
+          cumulative_ufcf: number;
+          strategic_health: number;
+        }>,
+      });
+
   const [
     { data: finalScore },
     { data: benchmarkRows },
     { data: rounds },
     { data: aiSubmission },
+    { data: leaderboardRows },
   ] = await Promise.all([
     supabase
       .from("team_final_scores")
@@ -114,6 +128,7 @@ export default async function FinalPage() {
       .eq("session_id", session.id)
       .eq("team_id", team.id)
       .maybeSingle(),
+    leaderboardRequest,
   ]);
 
   if (!finalScore) {
@@ -175,12 +190,24 @@ export default async function FinalPage() {
 
   const netDebt = Number(finalScore.final_net_debt);
   const aiDone = Boolean(aiSubmission);
+  const leaderboard = (leaderboardRows ?? []).map((score) => ({
+    position: score.rank_position,
+    teamId: score.team_id,
+    teamName: score.team_name,
+    finalGameValue: Number(score.final_game_value),
+    cumulativeUfcf: Number(score.cumulative_ufcf),
+    strategicHealth: Number(score.strategic_health),
+    isOwnTeam: score.team_id === team.id,
+  }));
+  const podium = [leaderboard[1], leaderboard[0], leaderboard[2]].filter(
+    (item): item is NonNullable<typeof item> => Boolean(item),
+  );
 
   return (
     <main className="application-page">
       <GameRealtime sessionId={session.id} teamId={team.id} />
       <AppHeader
-        section="Risultato finale"
+        section={resultsReleased ? "Classifica finale" : "Risultato finale"}
         sessionCode="SIMULAZIONE COMPLETATA"
         userName={team.name}
       />
@@ -188,10 +215,12 @@ export default async function FinalPage() {
       <div className="page-main final-main">
         <section className="final-heading">
           <div>
-            <h1>{team.name} — Report finale</h1>
+            <h1>
+              {resultsReleased ? "Classifica finale" : `${team.name} — Report finale`}
+            </h1>
             <p>
               {resultsReleased
-                ? "Il gioco è terminato. Il report combina valore creato, KPI finali, decisioni dei tre round e benchmark rispetto alla classe."
+                ? "I risultati sono stati pubblicati dal docente. Scopri il podio, la classifica completa e poi approfondisci il report del tuo team."
                 : "Il gioco è terminato. Completate la consegna AI: il docente mostrerà la classifica solo quando tutti i team avranno registrato il materiale richiesto."}
             </p>
           </div>
@@ -202,6 +231,68 @@ export default async function FinalPage() {
             </div>
           ) : null}
         </section>
+
+        {resultsReleased && leaderboard.length ? (
+          <section className="student-leaderboard-reveal">
+            <div className="student-podium" aria-label="Podio finale">
+              <div className="student-podium-label">PODIO</div>
+              <div className="student-podium-grid">
+                {podium.map((entry) => (
+                  <article
+                    className={`student-podium-card position-${entry.position}${
+                      entry.isOwnTeam ? " own-team" : ""
+                    }`}
+                    key={entry.teamId}
+                  >
+                    <span>{entry.position}°</span>
+                    <strong>{entry.teamName.toUpperCase()}</strong>
+                    <small>{moneyBn(entry.finalGameValue)}</small>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="student-ranking-card">
+              <div className="student-ranking-heading">
+                <div>
+                  <div className="card-eyebrow">RISULTATI FINALI</div>
+                  <h2>Classifica completa</h2>
+                </div>
+                <span>{leaderboard.length} team</span>
+              </div>
+
+              <div className="student-ranking-table header">
+                <span>#</span>
+                <span>Team</span>
+                <span>Valore finale</span>
+                <span>FCF cumulato</span>
+                <span>Solidità strategica</span>
+              </div>
+
+              <div className="student-ranking-rows">
+                {leaderboard.map((entry) => (
+                  <div
+                    className={
+                      entry.isOwnTeam
+                        ? "student-ranking-table row own-team"
+                        : "student-ranking-table row"
+                    }
+                    key={entry.teamId}
+                  >
+                    <strong>{entry.position}</strong>
+                    <div>
+                      <strong>{entry.teamName}</strong>
+                      {entry.isOwnTeam ? <small>Il tuo team</small> : null}
+                    </div>
+                    <span>{moneyBn(entry.finalGameValue)}</span>
+                    <span>{moneyBn(entry.cumulativeUfcf)}</span>
+                    <span>{entry.strategicHealth.toFixed(2)}x</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {resultsReleased ? (
           <section className="final-value-hero">
