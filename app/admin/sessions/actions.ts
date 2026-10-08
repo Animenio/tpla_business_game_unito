@@ -138,6 +138,44 @@ export async function selectSessionAction(formData: FormData) {
   redirect(session.status === "completed" ? "/teacher/leaderboard" : "/teacher");
 }
 
+
+export async function previewSessionAction(formData: FormData) {
+  const sessionId = value(formData, "session_id");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/?mode=login");
+  }
+
+  const { data: membership } = await supabase
+    .from("session_members")
+    .select("role")
+    .eq("session_id", sessionId)
+    .eq("user_id", user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (!membership) {
+    redirect(routeError("Solo un amministratore può aprire l’anteprima visuale."));
+  }
+
+  const { data: session } = await supabase
+    .from("game_sessions")
+    .select("status")
+    .eq("id", sessionId)
+    .single();
+
+  if (!session || session.status === "archived") {
+    redirect(routeError("La sessione è archiviata e non può essere aperta in anteprima."));
+  }
+
+  await setSessionCookie(sessionId);
+  redirect("/admin/preview");
+}
+
 export async function archiveSessionAction(formData: FormData) {
   const sessionId = value(formData, "session_id");
   const supabase = await createClient();
