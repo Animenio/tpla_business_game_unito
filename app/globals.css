@@ -4754,6 +4754,7 @@ button {
   --cfo-disabled-bg: #d6d6d6;
   --cfo-disabled-text: #737373;
   --cfo-google-blue: #4285f5;
+  --cfo-status-danger-bg: #fcebec;
 }
 
 button,
@@ -5113,6 +5114,44 @@ textarea {
 .ai-report-card {
   min-height: 500px;
   border-radius: 14px;
+}
+
+.ai-external-upload-zone {
+  min-height: 145px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 12px;
+  background: var(--cfo-surface-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  text-align: center;
+}
+
+.ai-upload-arrow {
+  color: var(--cfo-brand-red);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ai-external-upload-zone .ai-form-button {
+  width: min(200px, 100%);
+  min-height: 48px;
+  margin-top: 2px;
+}
+
+.ai-external-upload-zone .ai-file-note {
+  margin-top: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+  line-height: 14px;
 }
 
 .ai-upload-card h2,
