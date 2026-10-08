@@ -88,7 +88,6 @@ export default async function AiChatPage({ searchParams }: AiChatPageProps) {
             currentTeamId={team.id}
             modelVersion={session.model_version}
             rows={leaderboard ?? []}
-            sessionCode={session.code}
           />
         )}
 
