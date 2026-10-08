@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { reviewDecisionsAction } from "@/app/rounds/actions";
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
+import { DecisionInfoPopover } from "@/src/components/decision-info-popover";
 import { GameRealtime } from "@/src/components/game-realtime";
 import { RoundTimer } from "@/src/components/round-timer";
 import { V05DecisionForm } from "@/src/components/v05-decision-form";
@@ -240,15 +241,11 @@ export default async function DecisionsPage({
                         <article className="decision-card" key={key}>
                           <div className="decision-card-top">
                             <label htmlFor={key}>{definition.label}</label>
-                            <details className="decision-info">
-                              <summary>ⓘ Info</summary>
-                              <div className="decision-info-panel">
-                                <strong>Cosa significa</strong>
-                                <p>{DECISION_HELP[key]}</p>
-                                <strong>Riferimento 2025</strong>
-                                <p>{DECISION_BASELINE_CONTEXT[key]}</p>
-                              </div>
-                            </details>
+                            <DecisionInfoPopover
+                              description={DECISION_HELP[key]}
+                              reference={DECISION_BASELINE_CONTEXT[key]}
+                              referenceLabel="Riferimento 2025"
+                            />
                             <div className="decision-value-input">
                               <input
                                 defaultValue={current}
