@@ -5894,3 +5894,67 @@ textarea {
     padding: 16px;
   }
 }
+
+
+/* Decision info: instant, viewport-aware floating tooltip */
+.decision-info {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  appearance: none;
+  font: inherit;
+  line-height: inherit;
+}
+
+.decision-info:hover,
+.decision-info:focus-visible {
+  z-index: 100;
+}
+
+.decision-info-popover {
+  position: fixed;
+  z-index: 2147483000;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 14px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid #c9d8e7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(30, 48, 66, 0.18);
+  color: var(--cfo-text-primary);
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+
+.decision-info-popover strong {
+  display: block;
+  color: var(--cfo-status-blue);
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+}
+
+.decision-info-popover strong + p {
+  margin-top: 6px;
+}
+
+.decision-info-popover p {
+  margin: 0 0 12px;
+  color: var(--cfo-text-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.decision-info-popover p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 560px) {
+  .decision-info-popover {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    padding: 13px 14px;
+  }
+}
