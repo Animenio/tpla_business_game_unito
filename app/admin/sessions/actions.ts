@@ -20,7 +20,13 @@ function routeError(message: string) {
 
 function translateError(message: string) {
   if (message.includes("ADMIN_REQUIRED")) {
-    return "Solo un amministratore può creare, duplicare o archiviare sessioni.";
+    return "Solo un amministratore può eseguire questa operazione.";
+  }
+  if (message.includes("SESSION_CODE_CONFIRMATION_MISMATCH")) {
+    return "Il codice di conferma non corrisponde al codice della sessione.";
+  }
+  if (message.includes("SESSION_ARCHIVED")) {
+    return "La sessione è archiviata e non può essere azzerata.";
   }
   if (message.includes("INVALID_SESSION_CODE")) {
     return "Il codice deve contenere 4–32 caratteri: lettere maiuscole, numeri, trattino o underscore.";
@@ -174,6 +180,29 @@ export async function previewSessionAction(formData: FormData) {
 
   await setSessionCookie(sessionId);
   redirect("/admin/preview");
+}
+
+
+export async function resetStudentSessionAction(formData: FormData) {
+  const sessionId = value(formData, "session_id");
+  const confirmationCode = value(formData, "confirmation_code").toUpperCase();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_reset_student_session", {
+    p_session_id: sessionId,
+    p_confirmation_code: confirmationCode,
+  });
+
+  if (error) {
+    redirect(routeError(translateError(error.message)));
+  }
+
+  await setSessionCookie(sessionId);
+  revalidatePath("/admin/sessions");
+  revalidatePath("/teacher");
+  revalidatePath("/team");
+  revalidatePath("/lobby");
+  redirect("/admin/sessions?updated=student-reset");
 }
 
 export async function archiveSessionAction(formData: FormData) {

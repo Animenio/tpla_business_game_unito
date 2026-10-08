@@ -70,6 +70,41 @@ export async function registerAction(formData: FormData) {
 
   const fullName = `${firstName} ${lastName}`.trim();
 
+  const { data: existingSession } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (existingSession.user) {
+    const { data: joined, error: joinError } = await supabase.rpc(
+      "complete_authenticated_session_join",
+      {
+        p_session_code: sessionCode,
+      },
+    );
+
+    if (joinError || !joined?.length) {
+      await supabase.auth.signOut();
+      redirect(
+        withError(
+          "/?mode=register",
+          "Non è stato possibile registrare di nuovo l’account alla sessione.",
+        ),
+      );
+    }
+
+    const membership = joined[0];
+
+    if (
+      membership.assigned_role === "teacher" ||
+      membership.assigned_role === "admin"
+    ) {
+      redirect("/teacher");
+    }
+
+    redirect("/team");
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
