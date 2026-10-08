@@ -106,11 +106,12 @@ Round 3 completion calculates and persists every team's final score, but the com
 The classroom sequence is:
 
 1. all teams complete Round 3;
-2. students can review their own operating KPIs and decision history, while Final Game Value, rank and class benchmark remain hidden;
+2. students can review their own operating KPIs and decision history, while the comparative ranking remains hidden;
 3. every team uploads the required AI-conversation file through the configured external form and clicks **Registra la consegna** in the app;
-4. the teacher console shows a pre-ranking debrief with class medians and decision tendencies for all three rounds;
-5. when every completed team has registered an AI submission, the **Mostra risultati** control becomes available;
-6. the teacher releases the ranking;
-7. student final pages refresh and reveal Final Game Value, position and class benchmark.
+4. immediately after registration, the student upload view is replaced by a dedicated **Consegna effettuata** state that confirms the submission and asks the team to wait for the teacher;
+5. the teacher console shows a pre-ranking debrief with class medians and decision tendencies for all three rounds;
+6. when every completed team has registered an AI submission, the **Mostra risultati** control becomes available;
+7. the teacher releases the ranking;
+8. the waiting student pages refresh automatically and reveal the Figma-aligned podium (1st, 2nd, 3rd) plus the complete class ranking; each team can still open its detailed final report.
 
-The release gate is server-authoritative. `student_final_benchmark` rejects access before `game_sessions.results_released_at` is set. Restarting a simulation clears the release state.
+The release gate is server-authoritative. `student_final_benchmark` and `student_final_leaderboard` reject access before `game_sessions.results_released_at` is set. The leaderboard RPC also verifies that the caller belongs to the session before returning class-wide released results. Restarting a simulation clears the release state.
