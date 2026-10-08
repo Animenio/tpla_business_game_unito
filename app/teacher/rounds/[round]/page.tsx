@@ -178,7 +178,12 @@ export default async function TeacherRoundPage({
         ),
       )
     : null;
-  const canFinalize = totalTeams > 0 && submittedCount === totalTeams;
+  const deadlineExpired =
+    Boolean(gameRound.closes_at) &&
+    new Date(gameRound.closes_at!).getTime() <= Date.now();
+  const missingCount = Math.max(0, totalTeams - submittedCount);
+  const canFinalize =
+    totalTeams > 0 && (submittedCount === totalTeams || deadlineExpired);
   const resultRevenueMedian = median(
     (results ?? []).map((result) => Number(result.total_revenue)),
   );
@@ -380,10 +385,12 @@ export default async function TeacherRoundPage({
                 <div className="card-rule" />
 
                 <p className="round-close-copy">
-                  La chiusura rende definitive tutte le decisioni inviate e
-                  calcola i risultati simultaneamente. Il round può essere
-                  chiuso solo quando tutti i team attivi hanno inviato. Se il
-                  tempo scade prima, estendi la finestra decisionale.
+                  La chiusura rende definitive le decisioni e calcola i risultati
+                  simultaneamente. Prima della scadenza servono tutti gli invii.
+                  Dopo la scadenza puoi comunque chiudere: per i team mancanti
+                  viene bloccata l’ultima bozza disponibile; se non esiste, viene
+                  mantenuta la strategia del round precedente oppure, nel Round 1,
+                  applicato un set neutrale di riferimento.
                 </p>
 
                 <form action={finalizeRoundAction}>
@@ -395,11 +402,10 @@ export default async function TeacherRoundPage({
                     type="submit"
                   >
                     {canFinalize
-                      ? "Chiudi round e calcola"
-                      : `In attesa di ${Math.max(
-                          0,
-                          totalTeams - submittedCount,
-                        )} team`}
+                      ? deadlineExpired && missingCount > 0
+                        ? `Chiudi round · fallback per ${missingCount} team`
+                        : "Chiudi round e calcola"
+                      : `In attesa di ${missingCount} team`}
                   </button>
                 </form>
               </>

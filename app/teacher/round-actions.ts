@@ -48,6 +48,9 @@ function teacherRoundError(message: string) {
   if (message.includes("ROUND_NOT_OPEN")) {
     return "Il round non è aperto.";
   }
+  if (message.includes("DEADLINE_NOT_EXPIRED")) {
+    return "Il termine non è ancora scaduto: attendi gli invii oppure estendi il round.";
+  }
   if (message.includes("RESULT_COUNT_MISMATCH")) {
     return "Il numero di risultati calcolati non coincide con gli invii ricevuti.";
   }
@@ -175,7 +178,7 @@ export async function finalizeRoundAction(formData: FormData) {
 
   const { data: gameRound } = await supabase
     .from("game_rounds")
-    .select("id, session_id, round_number, status")
+    .select("id, session_id, round_number, status, closes_at")
     .eq("id", roundId)
     .eq("session_id", session.id)
     .eq("round_number", round)
@@ -188,6 +191,26 @@ export async function finalizeRoundAction(formData: FormData) {
         "Il round non è aperto.",
       ),
     );
+  }
+
+  const deadlineExpired =
+    Boolean(gameRound.closes_at) &&
+    new Date(gameRound.closes_at!).getTime() <= Date.now();
+
+  if (deadlineExpired) {
+    const { error: prepareError } = await supabase.rpc(
+      "teacher_prepare_expired_round",
+      { p_round_id: roundId },
+    );
+
+    if (prepareError) {
+      redirect(
+        routeError(
+          `/teacher/rounds/${round}`,
+          teacherRoundError(prepareError.message),
+        ),
+      );
+    }
   }
 
   const { data: submissions, error: submissionError } = await supabase

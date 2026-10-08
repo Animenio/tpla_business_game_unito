@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/client";
 
 interface RoundTimerProps {
@@ -29,11 +30,14 @@ export function RoundTimer({
   roundId,
   compact = false,
 }: RoundTimerProps) {
+  const router = useRouter();
+  const refreshedAtExpiry = useRef(false);
   const [effectiveClosesAt, setEffectiveClosesAt] = useState(closesAt);
   const [seconds, setSeconds] = useState(() => remainingSeconds(closesAt));
 
   useEffect(() => {
     setEffectiveClosesAt(closesAt);
+    refreshedAtExpiry.current = false;
   }, [closesAt]);
 
   useEffect(() => {
@@ -101,6 +105,12 @@ export function RoundTimer({
     () => seconds !== null && seconds <= 0,
     [seconds],
   );
+
+  useEffect(() => {
+    if (!expired || refreshedAtExpiry.current) return;
+    refreshedAtExpiry.current = true;
+    router.refresh();
+  }, [expired, router]);
 
   return (
     <span
