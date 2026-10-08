@@ -66,7 +66,12 @@ interface AdminGamePreviewProps {
   };
 }
 
-const PREVIEW_SCREENS = [
+const PREVIEW_SCREENS: ReadonlyArray<{
+  id: string;
+  label: string;
+  audience: string;
+  roundAware?: boolean;
+}> = [
   { id: "registration", label: "Registrazione", audience: "Studente" },
   { id: "team", label: "Team", audience: "Studente" },
   { id: "lobby", label: "Lobby", audience: "Studente" },
@@ -82,7 +87,7 @@ const PREVIEW_SCREENS = [
   { id: "teacher-debrief", label: "Debrief", audience: "Docente" },
   { id: "final-released", label: "Finale pubblicato", audience: "Studente" },
   { id: "leaderboard", label: "Leaderboard", audience: "Docente" },
-] as const;
+];
 
 function moneyBn(value: number) {
   return `€${(Math.abs(value) / 1000).toFixed(2)}bn${value < 0 ? " cash" : ""}`;
