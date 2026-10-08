@@ -5581,3 +5581,354 @@ textarea {
     padding: 16px;
   }
 }
+
+
+/* Student submission waiting state and released leaderboard */
+.ai-waiting-main,
+.student-results-main {
+  padding-bottom: 72px;
+}
+
+.ai-waiting-card {
+  max-width: 880px;
+  margin: 28px auto 0;
+  padding: 48px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 16px;
+  background: var(--cfo-surface-white);
+  text-align: center;
+}
+
+.ai-waiting-check {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 22px;
+  border-radius: 50%;
+  background: var(--cfo-status-green-bg);
+  color: var(--cfo-status-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.ai-waiting-card h1 {
+  margin: 12px 0 0;
+  font-size: 34px;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.ai-waiting-card > p {
+  max-width: 620px;
+  margin: 12px auto 0;
+  color: var(--cfo-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.ai-waiting-status {
+  max-width: 680px;
+  margin: 32px auto 0;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--cfo-status-amber-bg);
+}
+
+.ai-waiting-status .status-badge {
+  width: max-content;
+  margin: 0 auto;
+}
+
+.ai-waiting-status h2 {
+  margin: 16px 0 0;
+  font-size: 21px;
+}
+
+.ai-waiting-status p {
+  margin: 10px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 12px;
+  line-height: 19px;
+}
+
+.ai-waiting-meta {
+  max-width: 680px;
+  margin: 24px auto 0;
+  border-top: 1px solid var(--cfo-border-default);
+  border-bottom: 1px solid var(--cfo-border-default);
+}
+
+.ai-waiting-meta > div {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--cfo-border-default);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  text-align: left;
+}
+
+.ai-waiting-meta > div:last-child {
+  border-bottom: 0;
+}
+
+.ai-waiting-meta dt {
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+}
+
+.ai-waiting-meta dd {
+  margin: 0;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ai-waiting-card > .ai-waiting-note {
+  margin-top: 20px;
+  font-size: 10px;
+}
+
+.student-results-heading {
+  min-height: 104px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.student-results-heading h1 {
+  margin: 11px 0 0;
+  font-size: 38px;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.student-results-heading p {
+  max-width: 760px;
+  margin: 12px 0 0;
+  color: var(--cfo-text-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.student-results-heading > .status-badge {
+  margin-top: 9px;
+}
+
+.student-podium-card {
+  min-height: 260px;
+  margin-top: 28px;
+  padding: 22px 70px 31px;
+  border-radius: 16px;
+  background: var(--cfo-surface-dark);
+  overflow: hidden;
+}
+
+.student-podium-title {
+  color: var(--cfo-surface-white);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.student-podium-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 350px));
+  justify-content: space-between;
+  gap: 30px;
+  margin-top: -4px;
+}
+
+.student-podium-entry {
+  height: 118px;
+  padding: 18px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.student-podium-entry span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.student-podium-entry strong {
+  margin-top: 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.student-podium-entry small {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.student-podium-entry.second {
+  margin-top: 61px;
+  background: var(--cfo-surface-page);
+  color: var(--cfo-text-secondary);
+}
+
+.student-podium-entry.first {
+  background: var(--cfo-status-amber-bg);
+  color: var(--cfo-text-primary);
+}
+
+.student-podium-entry.first span {
+  color: var(--cfo-brand-red);
+}
+
+.student-podium-entry.third {
+  margin-top: 83px;
+  background: var(--cfo-status-amber);
+  color: var(--cfo-surface-white);
+}
+
+.student-ranking-card {
+  margin-top: 36px;
+  padding: 20px;
+  border: 1px solid var(--cfo-border-default);
+  border-radius: 14px;
+  background: var(--cfo-surface-white);
+}
+
+.student-ranking-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.student-ranking-heading h2 {
+  margin: 8px 0 0;
+  font-size: 20px;
+}
+
+.student-ranking-heading > span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--cfo-surface-subtle);
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.student-ranking-scroll {
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+.student-ranking-grid {
+  min-width: 720px;
+  display: grid;
+  grid-template-columns: 54px minmax(180px, 1.5fr) 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.student-ranking-grid.header {
+  min-height: 34px;
+  padding: 0 12px;
+  color: var(--cfo-text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.student-ranking-rows {
+  display: grid;
+  gap: 5px;
+}
+
+.student-ranking-grid.row {
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--cfo-surface-white);
+  font-size: 11px;
+}
+
+.student-ranking-grid.row:first-child {
+  background: var(--cfo-status-blue-bg);
+}
+
+.student-ranking-grid.row.own {
+  box-shadow: inset 3px 0 var(--cfo-brand-red);
+}
+
+.student-ranking-grid.row > strong:first-child {
+  font-size: 13px;
+}
+
+.student-ranking-grid.row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--cfo-brand-red);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.student-results-actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.student-results-actions .button-secondary {
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .ai-waiting-card {
+    margin-top: 16px;
+    padding: 28px 20px;
+  }
+
+  .ai-waiting-meta > div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .ai-waiting-meta dd {
+    text-align: left;
+  }
+
+  .student-results-heading {
+    flex-direction: column;
+  }
+
+  .student-podium-card {
+    padding: 22px;
+  }
+
+  .student-podium-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .student-podium-entry,
+  .student-podium-entry.second,
+  .student-podium-entry.third {
+    height: auto;
+    min-height: 106px;
+    margin-top: 0;
+  }
+
+  .student-podium-entry.first {
+    order: -1;
+  }
+
+  .student-results-actions {
+    justify-content: stretch;
+  }
+
+  .student-results-actions .button-secondary {
+    width: 100%;
+    min-width: 0;
+  }
+}
