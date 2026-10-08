@@ -108,9 +108,10 @@ The classroom sequence is:
 1. all teams complete Round 3;
 2. students can review their own operating KPIs and decision history, while Final Game Value, rank and class benchmark remain hidden;
 3. every team uploads the required AI-conversation file through the configured external form and clicks **Registra la consegna** in the app;
-4. the teacher console shows a pre-ranking debrief with class medians and decision tendencies for all three rounds;
-5. when every completed team has registered an AI submission, the **Mostra risultati** control becomes available;
-6. the teacher releases the ranking;
-7. student final pages refresh and reveal Final Game Value, position and class benchmark.
+4. immediately after registration, the student view switches to **Consegna effettuata — Risultati in attesa del docente** and remains there without requiring a manual refresh;
+5. the teacher console shows a pre-ranking debrief with class medians and decision tendencies for all three rounds;
+6. when every completed team has registered an AI submission, the **Mostra risultati** control becomes available;
+7. the teacher releases the ranking;
+8. Realtime redirects waiting students to the released final view, which opens with the Figma-aligned podium (1st, 2nd, 3rd) and the complete ranking of every team before the individual team report.
 
-The release gate is server-authoritative. `student_final_benchmark` rejects access before `game_sessions.results_released_at` is set. Restarting a simulation clears the release state.
+The release gate is server-authoritative. `student_final_benchmark` and `student_final_leaderboard` reject access before `game_sessions.results_released_at` is set. The leaderboard RPC additionally verifies that the caller belongs to a team in the requested session. Restarting a simulation clears the release state.
