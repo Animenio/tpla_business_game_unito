@@ -4,6 +4,7 @@ import {
   archiveSessionAction,
   createSessionAction,
   duplicateSessionAction,
+  previewSessionAction,
   selectSessionAction,
 } from "@/app/admin/sessions/actions";
 import { AppFooter } from "@/src/components/app-footer";
@@ -298,21 +299,33 @@ export default async function AdminSessionsPage({
 
                     <div className="session-row-actions">
                       {!archived ? (
-                        <form action={selectSessionAction}>
-                          <input
-                            name="session_id"
-                            type="hidden"
-                            value={session.id}
-                          />
-                          <button
-                            className={
-                              selected ? "button-primary" : "button-secondary"
-                            }
-                            type="submit"
-                          >
-                            {selected ? "Sessione selezionata" : "Apri sessione"}
-                          </button>
-                        </form>
+                        <>
+                          <form action={selectSessionAction}>
+                            <input
+                              name="session_id"
+                              type="hidden"
+                              value={session.id}
+                            />
+                            <button
+                              className={
+                                selected ? "button-primary" : "button-secondary"
+                              }
+                              type="submit"
+                            >
+                              {selected ? "Sessione selezionata" : "Apri sessione"}
+                            </button>
+                          </form>
+                          <form action={previewSessionAction}>
+                            <input
+                              name="session_id"
+                              type="hidden"
+                              value={session.id}
+                            />
+                            <button className="button-secondary" type="submit">
+                              Anteprima UI
+                            </button>
+                          </form>
+                        </>
                       ) : null}
 
                       <details className="session-duplicate">
