@@ -34,6 +34,12 @@ function translateError(message: string) {
   if (message.includes("SESSION_NOT_FOUND")) {
     return "Sessione non trovata.";
   }
+  if (message.includes("SESSION_ARCHIVED")) {
+    return "La sessione è archiviata e non può essere azzerata.";
+  }
+  if (message.includes("CONFIRMATION_CODE_MISMATCH")) {
+    return "Codice di conferma non corretto. Digita esattamente il codice della sessione.";
+  }
   return "Operazione non completata. Riprova.";
 }
 
@@ -174,6 +180,29 @@ export async function previewSessionAction(formData: FormData) {
 
   await setSessionCookie(sessionId);
   redirect("/admin/preview");
+}
+
+export async function resetSessionStudentsAction(formData: FormData) {
+  const sessionId = value(formData, "session_id");
+  const confirmationCode = value(formData, "confirmation_code").toUpperCase();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_reset_session_students", {
+    p_session_id: sessionId,
+    p_confirmation_code: confirmationCode,
+  });
+
+  if (error) {
+    redirect(routeError(translateError(error.message)));
+  }
+
+  revalidatePath("/admin/sessions");
+  revalidatePath("/teacher");
+  revalidatePath("/team");
+  revalidatePath("/lobby");
+  revalidatePath("/case-study");
+  revalidatePath("/final");
+  redirect("/admin/sessions?updated=reset");
 }
 
 export async function archiveSessionAction(formData: FormData) {
