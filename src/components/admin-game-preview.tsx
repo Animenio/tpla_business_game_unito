@@ -1,5 +1,6 @@
 import { AppFooter } from "@/src/components/app-footer";
 import { AppHeader } from "@/src/components/app-header";
+import { StudentFinalLeaderboard } from "@/src/components/student-final-leaderboard";
 import { V05DecisionForm } from "@/src/components/v05-decision-form";
 import {
   BASELINE_DISPLAY,
@@ -84,6 +85,7 @@ const PREVIEW_SCREENS: ReadonlyArray<{
   { id: "teacher-live", label: "Console round", audience: "Docente", roundAware: true },
   { id: "final-locked", label: "Finale bloccato", audience: "Studente" },
   { id: "ai-evidence", label: "Consegna AI", audience: "Studente" },
+  { id: "ai-waiting", label: "Consegna registrata", audience: "Studente" },
   { id: "teacher-debrief", label: "Debrief", audience: "Docente" },
   { id: "final-released", label: "Finale pubblicato", audience: "Studente" },
   { id: "leaderboard", label: "Leaderboard", audience: "Docente" },
@@ -1022,6 +1024,46 @@ function PreviewAiEvidence({ sessionCode }: { sessionCode: string }) {
   );
 }
 
+function PreviewAiWaiting({ sessionCode }: { sessionCode: string }) {
+  return (
+    <main className="application-page admin-preview-surface">
+      <PreviewHeader section="Consegna completata" sessionCode={sessionCode} />
+      <div className="page-main ai-waiting-main">
+        <section className="ai-waiting-card">
+          <div className="ai-waiting-check" aria-hidden="true">✓</div>
+          <div className="card-eyebrow">CONSEGNA REGISTRATA</div>
+          <h1>Consegna effettuata</h1>
+          <p>
+            La conversazione AI del team <strong>Alpha</strong> è stata
+            registrata correttamente.
+          </p>
+          <div className="ai-waiting-status">
+            <div className="status-badge amber">
+              <span className="status-dot" />
+              Risultati in attesa del docente
+            </div>
+            <h2>Attendi la pubblicazione della classifica</h2>
+            <p>
+              Quando il docente selezionerà “Mostra risultati”, questa pagina
+              si aggiornerà automaticamente e visualizzerà il podio e la
+              classifica completa dei team.
+            </p>
+          </div>
+          <dl className="ai-waiting-meta">
+            <div><dt>Modello AI dichiarato</dt><dd>ChatGPT</dd></div>
+            <div><dt>Registrata il</dt><dd>08/10/2026, 11:35</dd></div>
+            <div><dt>Stato consegna</dt><dd>Registrata</dd></div>
+          </dl>
+          <p className="ai-waiting-note">
+            Non è necessario ricaricare manualmente la pagina.
+          </p>
+        </section>
+      </div>
+      <PreviewFooter />
+    </main>
+  );
+}
+
 function PreviewTeacherDebrief({
   sessionCode,
   final,
@@ -1148,82 +1190,62 @@ function PreviewTeacherDebrief({
 
 function PreviewFinalReleased({
   sessionCode,
-  annual,
   final,
 }: {
   sessionCode: string;
-  annual: AdminGamePreviewProps["annual"];
   final: AdminGamePreviewProps["final"];
 }) {
+  const rows = [
+    {
+      rank_position: 1,
+      team_id: "alpha",
+      team_name: "Alpha",
+      final_game_value: final.finalGameValue,
+      cumulative_ufcf: 2910,
+      strategic_health: 1.26,
+    },
+    {
+      rank_position: 2,
+      team_id: "delta",
+      team_name: "Delta",
+      final_game_value: final.finalGameValue * 0.956,
+      cumulative_ufcf: 2640,
+      strategic_health: 1.18,
+    },
+    {
+      rank_position: 3,
+      team_id: "gamma",
+      team_name: "Gamma",
+      final_game_value: final.finalGameValue * 0.878,
+      cumulative_ufcf: 2520,
+      strategic_health: 1.14,
+    },
+    {
+      rank_position: 4,
+      team_id: "sigma",
+      team_name: "Sigma",
+      final_game_value: final.finalGameValue * 0.792,
+      cumulative_ufcf: 2430,
+      strategic_health: 1.03,
+    },
+    {
+      rank_position: 5,
+      team_id: "beta",
+      team_name: "Beta",
+      final_game_value: final.finalGameValue * 0.738,
+      cumulative_ufcf: 2140,
+      strategic_health: 0.96,
+    },
+  ];
+
   return (
     <main className="application-page admin-preview-surface">
-      <PreviewHeader section="Report finale" sessionCode={sessionCode} />
-      <div className="page-main final-main">
-        <section className="final-heading">
-          <div>
-            <h1>Alpha — Report finale</h1>
-            <p>
-              Il report combina valore creato, KPI finali, decisioni dei tre
-              round e benchmark rispetto alla classe.
-            </p>
-          </div>
-          <div className="status-badge green">
-            <span className="status-dot" />
-            4° di 12 team
-          </div>
-        </section>
-        <section className="final-value-hero">
-          <div>
-            <span>VALORE FINALE SIMULATO</span>
-            <strong>{moneyBn(final.finalGameValue)}</strong>
-            <small>
-              La classifica premia il valore creato nel tempo, non un singolo
-              KPI annuale.
-            </small>
-          </div>
-          <div className="final-hero-metric">
-            <span>Posizione</span>
-            <strong>4° posto</strong>
-          </div>
-          <div className="final-hero-metric">
-            <span>vs class median</span>
-            <strong>+1.8%</strong>
-          </div>
-          <div className="final-hero-metric">
-            <span>FCF cumulato</span>
-            <strong>{moneyBn(annual.cumulativeUfcf)}</strong>
-          </div>
-          <div className="final-hero-metric">
-            <span>Solidità strategica</span>
-            <strong>{final.strategicHealth.toFixed(2)}x</strong>
-          </div>
-        </section>
-        <section className="final-value-breakdown-card">
-          <div className="card-eyebrow">COME SI FORMA IL VALORE</div>
-          <h2>
-            FGV = PV flussi espliciti + PV terminale − debito netto iniziale −
-            distress
-          </h2>
-          <div className="final-value-breakdown-grid">
-            <article>
-              <span>PV flussi espliciti</span>
-              <strong>{moneyBn(final.pvExplicitUfcf)}</strong>
-            </article>
-            <article>
-              <span>PV valore terminale</span>
-              <strong>{moneyBn(final.pvTerminalValue)}</strong>
-            </article>
-            <article>
-              <span>Enterprise value</span>
-              <strong>{moneyBn(final.enterpriseValue)}</strong>
-            </article>
-            <article>
-              <span>Distress</span>
-              <strong>{moneyBn(final.riskPenalty)}</strong>
-            </article>
-          </div>
-        </section>
-      </div>
+      <PreviewHeader section="Classifica finale" sessionCode={sessionCode} />
+      <StudentFinalLeaderboard
+        currentTeamId="alpha"
+        modelVersion="aurora-tyres-v0.5.3"
+        rows={rows}
+      />
       <PreviewFooter />
     </main>
   );
@@ -1389,6 +1411,9 @@ export function AdminGamePreview(props: AdminGamePreviewProps) {
     case "ai-evidence":
       body = <PreviewAiEvidence sessionCode={props.sessionCode} />;
       break;
+    case "ai-waiting":
+      body = <PreviewAiWaiting sessionCode={props.sessionCode} />;
+      break;
     case "teacher-debrief":
       body = (
         <PreviewTeacherDebrief
@@ -1400,7 +1425,6 @@ export function AdminGamePreview(props: AdminGamePreviewProps) {
     case "final-released":
       body = (
         <PreviewFinalReleased
-          annual={props.annual}
           final={props.final}
           sessionCode={props.sessionCode}
         />
